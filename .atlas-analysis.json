@@ -1,0 +1,184 @@
+{
+  "projectType": "saas",
+  "projectName": "ICL Cotizaciones",
+  "projectDescription": "Freight quotation management system for maritime and air shipping with client management, pricing, and analytics.",
+  "theme": "linden",
+  "primaryColor": "#002F51",
+  "lightColor": "#299DF4",
+  "darkColor": "#2E6B96",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/database-schema",
+              "architecture/authentication",
+              "architecture/routing"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/quotations",
+              "features/clients",
+              "features/commercial-agreements",
+              "features/pricing",
+              "features/dashboards"
+            ]
+          },
+          {
+            "group": "User Guides",
+            "pages": [
+              "guides/user-roles",
+              "guides/creating-quotations",
+              "guides/managing-clients",
+              "guides/pricing-configuration",
+              "guides/analytics"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "operations/deployment",
+              "operations/database-management",
+              "operations/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/login",
+              "api/auth/logout",
+              "api/auth/me"
+            ]
+          },
+          {
+            "group": "Quotations",
+            "pages": [
+              "api/quotations/list",
+              "api/quotations/create",
+              "api/quotations/get",
+              "api/quotations/update",
+              "api/quotations/delete",
+              "api/quotations/next-number"
+            ]
+          },
+          {
+            "group": "Clients",
+            "pages": [
+              "api/clients/list",
+              "api/clients/create",
+              "api/clients/get",
+              "api/clients/update",
+              "api/clients/delete"
+            ]
+          },
+          {
+            "group": "Commercial Agreements",
+            "pages": [
+              "api/agreements/list",
+              "api/agreements/create",
+              "api/agreements/get",
+              "api/agreements/update",
+              "api/agreements/delete"
+            ]
+          },
+          {
+            "group": "Locations",
+            "pages": [
+              "api/locations/origins",
+              "api/locations/vias"
+            ]
+          },
+          {
+            "group": "Pricing",
+            "pages": [
+              "api/pricing/netos",
+              "api/pricing/port-base-rates"
+            ]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "api/users/list",
+              "api/users/create",
+              "api/users/get",
+              "api/users/update",
+              "api/users/delete"
+            ]
+          },
+          {
+            "group": "Analytics",
+            "pages": [
+              "api/dashboard/overview"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Role-based access control with 6 user roles",
+    "Comprehensive quotation management (FCL/LCL freight)",
+    "Client and commercial agreement tracking",
+    "Pricing tables for net rates and port-based pricing",
+    "Multi-dimensional analytics dashboards",
+    "SQLite database with Drizzle ORM",
+    "Session-based authentication with iron-session",
+    "Modern Next.js 16 App Router architecture"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/login",
+    "POST /api/auth/logout",
+    "GET /api/auth/me",
+    "GET /api/cotizaciones",
+    "POST /api/cotizaciones",
+    "GET /api/cotizaciones/:id",
+    "PUT /api/cotizaciones/:id",
+    "DELETE /api/cotizaciones/:id",
+    "GET /api/cotizaciones/next-nro",
+    "GET /api/clientes",
+    "POST /api/clientes",
+    "GET /api/clientes/:id",
+    "PUT /api/clientes/:id",
+    "DELETE /api/clientes/:id",
+    "GET /api/acuerdos",
+    "POST /api/acuerdos",
+    "GET /api/acuerdos/:id",
+    "PUT /api/acuerdos/:id",
+    "DELETE /api/acuerdos/:id",
+    "GET /api/origenes",
+    "POST /api/origenes",
+    "GET /api/vias",
+    "POST /api/vias",
+    "GET /api/locations",
+    "POST /api/locations",
+    "GET /api/pricing-netos",
+    "POST /api/pricing-netos",
+    "GET /api/tarifario-puertos-base",
+    "POST /api/tarifario-puertos-base",
+    "GET /api/usuarios",
+    "POST /api/usuarios",
+    "GET /api/usuarios/:id",
+    "PUT /api/usuarios/:id",
+    "DELETE /api/usuarios/:id",
+    "GET /api/dashboard"
+  ]
+}
