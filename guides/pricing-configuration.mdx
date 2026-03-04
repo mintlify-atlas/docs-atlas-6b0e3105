@@ -1,0 +1,493 @@
+---
+title: Pricing Configuration
+description: Setting up and managing pricing tables for automated rate suggestions
+---
+
+ICL Cotizaciones includes two pricing tables that power automated rate suggestions in quotations. This guide explains how to configure and maintain these critical master data tables.
+
+<Info>
+Pricing management is restricted to **administrative roles** (Director, Gerente, Administración). Comercial and Operaciones users can view pricing but cannot modify it.
+</Info>
+
+## Pricing Tables Overview
+
+The system maintains two pricing tables:
+
+**Pricing Netos** (Net Pricing)
+- FCL and LCL pricing by region, country, and port
+- Includes calculated fields for container rates and per-cubic-meter rates
+- Used internally for cost calculations
+- Supports USD and EUR currencies
+
+**Tarifario Puertos Base** (Base Port Tariff)
+- LCL-only pricing tiers by volume
+- Used for automatic freight rate suggestions in quotations
+- Four volume-based rate tiers
+- Supports USD, EUR, and ARS currencies
+
+## Managing Pricing Netos
+
+Pricing Netos provides comprehensive freight pricing for both FCL (Full Container Load) and LCL (Less than Container Load) shipments.
+
+### Accessing Pricing Netos
+
+From the sidebar: **Maestros** → **Pricing Netos**
+
+The list displays all pricing records grouped by region, showing:
+- Country and port/via
+- Container type (LCL, 20', 40', 40'HQ)
+- Currency and freight rates
+- Calculated net values
+- Validity period
+
+### Understanding the Pricing Netos Structure
+
+Each pricing record has three categories of fields:
+
+**Identification**
+- Region, Country, Port - Geographic hierarchy
+- Tipo - Container/cargo type
+- Currency - USD or EUR
+
+**Input Values** (what you enter)
+- Freight Net - Base freight cost
+- 1ra Pierna - First leg surcharge (optional)
+- Rebate - Discount or adjustment (optional)
+
+**Calculated Values** (auto-computed)
+- Neto Contenedor = Freight Net + (1ra Pierna × 50)
+- Neto M³ = Container-type-specific calculation
+- Neto Total = Neto M³ + Rebate
+
+### Creating a New Price
+
+<Steps>
+  <Step title="Open the price dialog">
+    Click **Nueva Tarifa** in the top right of the Pricing Netos page.
+  </Step>
+  
+  <Step title="Select location hierarchy">
+    **Región** (required) - Select from available regions
+    - The dropdown populates from locations marked as "via" type
+    - Regions are unique values from the location database
+    
+    **País** (required) - Select country
+    - Dropdown filters to show only countries in the selected region
+    - Dynamically updates when you change region
+    
+    **Vía** (required) - Select port or city
+    - Dropdown filters to show only locations matching region + country
+    - Start typing to search
+    
+    <Note>
+    The location hierarchy prevents invalid combinations. Always select region first, then country, then via.
+    </Note>
+  </Step>
+  
+  <Step title="Set cargo type and currency">
+    **Tipo** (required) - Select container/cargo type:
+    - `LCL` - Less than Container Load (consolidated)
+    - `20'` - 20-foot container
+    - `40'` - 40-foot container
+    - `40'HQ` - 40-foot high cube container
+    
+    **Moneda** (required) - Select currency:
+    - `USD` - US Dollars
+    - `EUR` - Euros
+  </Step>
+  
+  <Step title="Enter freight costs">
+    **Flete Neto** (required) - Base net freight cost
+    - Enter the negotiated or standard rate
+    - Numeric value only
+    
+    **1ra Pierna** (optional) - First leg charge
+    - Additional cost for initial transport segment
+    - Multiplied by 50 in container calculation
+    - Leave empty or enter 0 if not applicable
+    
+    **Rebate** (optional) - Discount or adjustment
+    - Positive value increases final net
+    - Negative value decreases final net
+    - Leave empty or enter 0 for no adjustment
+  </Step>
+  
+  <Step title="Review calculated values">
+    The form displays a live preview of calculated values:
+    
+    **Neto Contenedor** = Freight Net + (1ra Pierna × 50)
+    - Shows total container cost including first leg
+    - Formula displayed below the value
+    
+    **Neto M³** - Calculated per cubic meter rate:
+    - For 20': (Neto Contenedor ÷ 50) - 2
+    - For 40': (Neto Contenedor ÷ 50) - 4
+    - For LCL and 40'HQ: Neto Contenedor ÷ 50
+    
+    **Neto Total** = Neto M³ + Rebate
+    - Final net rate per cubic meter
+    - Displayed in blue as the key output value
+    
+    <Info>
+    These values update in real-time as you change inputs. They're stored in the database to optimize quotation lookups.
+    </Info>
+  </Step>
+  
+  <Step title="Set validity period">
+    **Válido Desde** (required) - Start date
+    - Format: YYYY-MM-DD
+    - Use the date picker or type directly
+    
+    **Válido Hasta** (required) - End date
+    - Must be later than start date
+    - Rates expire after this date
+    
+    <Tip>
+    Set validity periods to match carrier contract terms. Update or create new rates before expiration to avoid gaps.
+    </Tip>
+  </Step>
+  
+  <Step title="Save the price">
+    Click **Crear tarifa**.
+    
+    The price is immediately available for reference and appears in the list grouped by region.
+  </Step>
+</Steps>
+
+### Editing an Existing Price
+
+<Steps>
+  <Step title="Locate the price">
+    Scroll to the appropriate region group in the list.
+  </Step>
+  
+  <Step title="Click edit icon">
+    Click the pencil icon in the Actions column.
+  </Step>
+  
+  <Step title="Modify values">
+    Change any fields as needed:
+    - You can change location (but typically create a new record instead)
+    - Update freight costs and adjustments
+    - Extend or modify validity dates
+    - The calculated values update automatically
+  </Step>
+  
+  <Step title="Save changes">
+    Click **Guardar cambios**.
+  </Step>
+</Steps>
+
+<Warning>
+Editing a price affects all future quotations but does not update existing quotations. Historical quotes retain their original pricing snapshot.
+</Warning>
+
+### Deleting a Price
+
+<Steps>
+  <Step title="Click delete icon">
+    In the Actions column, click the trash icon for the price record.
+  </Step>
+  
+  <Step title="Confirm deletion">
+    A confirmation dialog appears: "¿Eliminar esta tarifa?"
+    
+    Click **OK** to confirm.
+  </Step>
+</Steps>
+
+Deletion is permanent. Consider creating a new rate with updated dates instead of deleting expired rates to preserve historical pricing data.
+
+### Exporting Pricing Netos to PDF
+
+To generate a printable pricing sheet:
+
+<Steps>
+  <Step title="Click Descargar PDF">
+    In the top right, click **Descargar PDF**.
+  </Step>
+  
+  <Step title="PDF generates">
+    A new browser tab opens with a formatted pricing table including:
+    - ICL logo header
+    - All pricing records grouped by region
+    - Color-coded sections
+    - All identification and pricing columns
+  </Step>
+  
+  <Step title="Print or save">
+    Use your browser's print dialog (Ctrl+P) to:
+    - Print to physical printer
+    - Save as PDF to your computer
+    - The layout is optimized for A4 landscape
+  </Step>
+</Steps>
+
+## Managing Tarifario Puertos Base
+
+The Base Port Tariff provides LCL freight rates with automatic volume-tier pricing. These rates power the automatic suggestions in quotation forms.
+
+### Accessing Tarifario Puertos Base
+
+From the sidebar: **Maestros** → **Tarifario Puertos Base**
+
+### Understanding Volume Tiers
+
+Each port tariff includes four volume-based rate tiers:
+
+| Tier | Volume Range | Field Name |
+|------|--------------|------------|
+| 1 | 0-3 CBM | rate_0_3_cbm |
+| 2 | 3-5 CBM | rate_3_5_cbm |
+| 3 | 5-10 CBM | rate_5_10_cbm |
+| 4 | 10-15 CBM | rate_10_15_cbm |
+
+Rates typically decrease as volume increases (volume discounts).
+
+### How Auto-Suggestion Works
+
+When creating an LCL quotation:
+
+1. User selects **Vía** (destination port)
+2. User enters **CBM Reales** (actual volume)
+3. System looks up the port in Tarifario Puertos Base
+4. System selects the appropriate tier based on CBM
+5. Rate auto-fills in the **Flete Neto** field (new quotes) or shows as a hint (editing)
+
+Example:
+```
+Vía: Shanghai
+CBM Reales: 7.2
+
+System matches: Shanghai in tariff table
+Volume 7.2 falls in tier 3 (5-10 CBM)
+Suggests: rate_5_10_cbm value
+```
+
+### Creating a Base Port Tariff
+
+<Steps>
+  <Step title="Open the tariff dialog">
+    Click **Nueva Tarifa** in the Tarifario Puertos Base page.
+  </Step>
+  
+  <Step title="Select location">
+    **Región** - Select geographic region (e.g., Asia, Europe, Americas)
+    
+    **País** - Select country (filters based on region)
+    
+    **Puerto de Embarque** - Select port of loading
+    - This must match a **Vía** name in the locations table
+    - The matching is case-sensitive
+    - If the port doesn't appear, add it to Maestros → Locaciones first
+  </Step>
+  
+  <Step title="Enter the four rate tiers">
+    **Tarifa 0-3 CBM** (required) - Rate for small shipments
+    
+    **Tarifa 3-5 CBM** (required) - Rate for small-medium shipments
+    
+    **Tarifa 5-10 CBM** (required) - Rate for medium shipments
+    
+    **Tarifa 10-15 CBM** (required) - Rate for medium-large shipments
+    
+    Enter rates in ascending tier order, typically with decreasing unit prices.
+    
+    <Tip>
+    If you don't have volume discounts, enter the same rate in all four tiers.
+    </Tip>
+  </Step>
+  
+  <Step title="Add optional details">
+    **GRI** - General Rate Increase reference
+    - Text field for tracking surcharges or adjustments
+    
+    **Mínimo** - Minimum charge
+    - Numeric field for flat minimum rate regardless of volume
+    
+    **Vía** - Routing/transit description
+    - Example: "Direct", "Via Singapore", "Transshipment"
+    
+    **Moneda** (required) - Select currency:
+    - `USD` - US Dollars
+    - `EUR` - Euros  
+    - `ARS` - Argentine Pesos
+    
+    **Tiempo de Tránsito** - Transit time
+    - Example: "25-30 days", "3-4 weeks"
+  </Step>
+  
+  <Step title="Set validity period">
+    **Válido Desde** (required) - Start date
+    
+    **Válido Hasta** (required) - End date
+    
+    The system currently doesn't filter by validity when suggesting rates, but these fields help you manage tariff updates.
+  </Step>
+  
+  <Step title="Save the tariff">
+    Click **Crear Tarifa**.
+    
+    The tariff is immediately active for quotation auto-suggestions.
+  </Step>
+</Steps>
+
+### Editing and Deleting Base Port Tariffs
+
+The process is identical to Pricing Netos:
+- Click the pencil icon to edit
+- Click the trash icon to delete
+- Changes take effect immediately
+
+## Location Management for Pricing
+
+Pricing tables depend on locations being properly configured.
+
+### Adding a New Port or Location
+
+Before you can create pricing for a new location:
+
+<Steps>
+  <Step title="Navigate to locations">
+    Go to **Maestros** → **Locaciones**
+  </Step>
+  
+  <Step title="Create the location">
+    Click **Nueva Locación** and enter:
+    - **Name** - Port or city name (this name must match exactly in pricing)
+    - **Country** - Country name
+    - **Region** - Geographic region
+    - **Location Type** - Select `via` for destinations
+    - **Activo** - Check to make active
+  </Step>
+  
+  <Step title="Save">
+    Click **Crear Locación**
+  </Step>
+  
+  <Step title="Create pricing">
+    Return to Pricing Netos or Tarifario Puertos Base and create rates for this location
+  </Step>
+</Steps>
+
+<Note>
+The location name in pricing tables must **exactly match** the location name in the Locaciones table for auto-suggestions to work. This includes case, spacing, and special characters.
+</Note>
+
+## Pricing Maintenance Best Practices
+
+### Regular Updates
+
+<Tip>
+**Set calendar reminders**: Schedule quarterly or monthly reviews of pricing tables to update expired rates and add new carrier contracts.
+</Tip>
+
+### Version Control Strategy
+
+<Tip>
+**Don't delete old rates**: When rates change, create new records with new validity dates instead of editing existing ones. This preserves historical pricing for audit and quotation reference.
+</Tip>
+
+### Validity Period Management
+
+<Tip>
+**Overlap validity periods**: Set new rates to start 1-2 days before old rates expire to ensure no coverage gaps.
+</Tip>
+
+Example:
+```
+Current rate: 2026-01-01 to 2026-03-31
+New rate:     2026-03-30 to 2026-06-30
+              ↑ Overlaps by 2 days
+```
+
+### Currency Consistency
+
+<Warning>
+**Match quotation currency**: Ensure you have pricing in the currencies your sales team uses for quotations. If you quote in USD, maintain USD pricing.
+</Warning>
+
+### Testing Auto-Suggestions
+
+<Tip>
+**Verify after updates**: After adding or modifying base port tariffs, create a test quotation to confirm the auto-suggestion works correctly.
+</Tip>
+
+Test checklist:
+1. Select the port in Vía field
+2. Enter a CBM value in each tier range
+3. Confirm the correct rate appears in Flete Neto
+
+## Bulk Pricing Updates
+
+For large-scale pricing updates:
+
+### Via CSV Import
+
+1. Export current pricing to understand the structure
+2. Prepare a CSV file with new rates
+3. Contact your system administrator for database import
+4. Validate imported rates through the UI
+
+### Via API (For Developers)
+
+If you have technical resources, the pricing tables can be updated via API:
+
+```bash
+# Example: Create a Pricing Neto record
+POST /api/pricing-netos
+Content-Type: application/json
+
+{
+  "region": "Asia",
+  "country": "China",
+  "port": "Shanghai",
+  "tipo": "LCL",
+  "currency": "USD",
+  "freight_net": 850,
+  "first_leg": 10,
+  "rebate": -5,
+  "valid_from": "2026-04-01",
+  "valid_until": "2026-06-30"
+}
+```
+
+Consult your development team for automation scripts.
+
+## Troubleshooting
+
+### Auto-Suggestion Not Working
+
+**Symptom**: LCL quotation doesn't auto-fill Flete Neto
+
+**Checks**:
+1. Verify the port exists in Maestros → Locaciones
+2. Confirm the location name in Tarifario Puertos Base exactly matches the location name
+3. Check that a tariff record exists for that port
+4. Ensure the CBM value is > 0
+5. Verify load type is set to LCL (not FCL)
+
+### Calculated Values Look Wrong
+
+**Symptom**: Neto M³ or Neto Total seem incorrect
+
+**Checks**:
+1. Review the calculation formulas (shown below preview values)
+2. Verify your Tipo selection (20', 40', etc.) - different types use different formulas
+3. Check that 1ra Pierna and Rebate values are correctly signed (positive/negative)
+4. Re-enter the values and watch the live calculation update
+
+### Location Not Available
+
+**Symptom**: Can't find a port in the Region/Country/Via dropdowns
+
+**Solution**:
+1. Go to Maestros → Locaciones
+2. Search for the location
+3. If it doesn't exist, create it with location_type = "via"
+4. Ensure it's marked as Activo (active)
+5. Return to pricing form and it should now appear
+
+<Card title="Related Guide" icon="arrow-right" href="./creating-quotations">
+  See how pricing tables integrate with the quotation workflow
+</Card>

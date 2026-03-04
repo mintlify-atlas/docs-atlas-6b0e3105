@@ -1,80 +1,400 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get ICL Cotizaciones running locally and create your first freight quotation in minutes"
 ---
 
-## Get started in three steps
+## Overview
 
-Get your documentation site running locally and make your first customization.
+ICL Cotizaciones is a freight quotation management SaaS application built with Next.js. This guide will walk you through setting up the application locally and creating your first quotation.
 
-### Step 1: Set up your local environment
+<Note>
+This quickstart focuses on local development. The application uses SQLite for the database, making setup straightforward with no external dependencies.
+</Note>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Prerequisites
 
-### Step 2: Deploy your changes
+Before you begin, ensure you have:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+- **Node.js** 18 or higher installed
+- **npm** or **yarn** package manager
+- A terminal application
+- Git (for cloning the repository)
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Setup Steps
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<Steps>
+  <Step title="Clone the repository">
+    Clone the ICL Cotizaciones repository to your local machine:
 
-### Step 3: Go live
+    <CodeGroup>
+    ```bash Terminal
+    git clone <repository-url>
+    cd iclapp
+    ```
+    </CodeGroup>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    <Note>Replace `<repository-url>` with your actual repository URL.</Note>
+  </Step>
 
-## Next steps
+  <Step title="Install dependencies">
+    Install all required npm packages:
 
-Now that you have your docs running, explore these key features:
+    <CodeGroup>
+    ```bash npm
+    npm install
+    ```
+
+    ```bash yarn
+    yarn install
+    ```
+    </CodeGroup>
+
+    The application uses:
+    - **Next.js 16** with App Router
+    - **Drizzle ORM** for database operations
+    - **iron-session** for authentication
+    - **Radix UI** and **Tailwind CSS** for the interface
+  </Step>
+
+  <Step title="Initialize the database">
+    Generate the database schema and seed it with sample data:
+
+    <CodeGroup>
+    ```bash Terminal
+    npm run db:generate
+    npm run db:seed
+    ```
+    </CodeGroup>
+
+    This creates:
+    - SQLite database at `data/icl.db`
+    - 8 test users (admin + commercial team)
+    - 30 sample clients
+    - 20 origin locations (China, India, Vietnam, etc.)
+    - 20 via locations (Buenos Aires, Miami, Hamburg, etc.)
+    - 200 sample quotations with realistic data
+
+    <Warning>
+    The seed script **deletes** any existing database. Only run `db:seed` when you want a fresh start.
+    </Warning>
+  </Step>
+
+  <Step title="Start the development server">
+    Launch the Next.js development server:
+
+    <CodeGroup>
+    ```bash Terminal
+    npm run dev
+    ```
+    </CodeGroup>
+
+    The application will start on **http://localhost:3000**
+
+    <Note>
+    Next.js uses Turbopack for faster development builds.
+    </Note>
+  </Step>
+</Steps>
+
+## First Login
+
+Navigate to **http://localhost:3000** in your browser. You'll be automatically redirected to the login page.
+
+### Test Credentials
+
+The seed data includes several test users. Use any of these credentials to log in:
 
 <CardGroup cols={2}>
+  <Card title="Admin User" icon="user-shield">
+    **Email:** admin@iclsa.com  
+    **Password:** icl2026  
+    **Role:** DIRECTOR (full access)
+  </Card>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Commercial User" icon="user">
+    **Email:** abosich@iclsa.com  
+    **Password:** icl2026  
+    **Role:** COMERCIAL (sales role)
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+All seeded users use the same password: **icl2026**
+
+Available test accounts include:
+- admin@iclsa.com (DIRECTOR)
+- abosich@iclsa.com (COMERCIAL)
+- bgonzalez@iclsa.com (COMERCIAL)
+- dosman@iclsa.com (COMERCIAL)
+- fmonserrat@iclsa.com (COMERCIAL)
+- gbalena@iclsa.com (COMERCIAL)
+- ppascal@iclsa.com (COMERCIAL)
+- mlopez@iclsa.com (GERENTE)
 </Note>
+
+### Login Flow
+
+<Steps>
+  <Step title="Enter credentials">
+    On the login page (`/login`):
+    1. Enter email: `admin@iclsa.com`
+    2. Enter password: `icl2026`
+    3. Click **Ingresar**
+  </Step>
+
+  <Step title="Authentication">
+    The application:
+    - Validates credentials via `/api/auth/login`
+    - Hashes and compares passwords using bcryptjs
+    - Creates an encrypted session using iron-session
+    - Sets a secure HTTP-only cookie
+  </Step>
+
+  <Step title="Redirect to dashboard">
+    Upon successful login, you're redirected to `/cotizaciones` — the main quotations dashboard.
+  </Step>
+</Steps>
+
+## Navigate the Dashboard
+
+The quotations dashboard (`/cotizaciones`) is your main workspace:
+
+### Dashboard Features
+
+<CodeGroup>
+```plaintext Layout
+┌─────────────────────────────────────────────┐
+│ [ICL Logo]  [Dashboard] [Clientes] [...]   │ ← Navigation
+├─────────────────────────────────────────────┤
+│ 200 cotizaciones                            │ ← Total count
+├─────────────────────────────────────────────┤
+│ Filters:                                     │
+│ [Desde] [Hasta] [Estado] [Cliente] [...]   │ ← Filter controls
+│            [Limpiar] [Nueva Cotización]     │
+├─────────────────────────────────────────────┤
+│ Semana 2026-S10 (15 cotizaciones)          │ ← Grouped by week
+│ ┌───────────────────────────────────────┐  │
+│ │ COT-2603-0001  Cliente X  Shanghai... │  │ ← Quotation rows
+│ │ COT-2603-0002  Cliente Y  Mumbai...   │  │
+│ └───────────────────────────────────────┘  │
+└─────────────────────────────────────────────┘
+```
+</CodeGroup>
+
+### Available Filters
+
+- **Date range:** Filter by creation date
+- **Estado (Status):** Ganada (Won), Perdida (Lost), Pendiente (Pending), En cotización
+- **Cliente (Client):** Filter by FFWW client
+- **Via:** Filter by destination port
+- **Comercial:** Filter by sales representative (admin only)
+- **Search:** Free text search across all fields
+
+<Note>
+**Commercial users** see only their own quotations by default. **Admin roles** (DIRECTOR, GERENTE, ADMINISTRACION) see all quotations.
+</Note>
+
+## Create Your First Quotation
+
+<Steps>
+  <Step title="Click 'Nueva Cotización'">
+    From the dashboard, click the blue **Nueva Cotización** button in the top-right filters section.
+
+    You'll be taken to `/cotizaciones/nueva` — the quotation creation form.
+  </Step>
+
+  <Step title="Fill in quotation details">
+    The form is organized into several sections:
+
+    ### 1. Operation Details
+    - **Impo/Expo:** IMPO (import) or EXPO (export)
+    - **Tipo:** GENERAL, PELIGROSA, REFRIGERADA, SOBREDIMENSIONADA
+    - **FCL/LCL:** Container type (Full Container Load or Less than Container Load)
+    - **Condición de Venta:** FOB, EXW, CIF, CFR, DDP
+
+    ### 2. Client & Route
+    - **Cliente FFWW:** Select from existing clients (or create new)
+    - **Cliente Final:** Optional end client name
+    - **Origen:** Port of origin (Shanghai, Mumbai, etc.)
+    - **Vía:** Destination port (Buenos Aires, Miami, etc.)
+    - **Pick Up Address:** Optional pickup location
+
+    ### 3. Cargo Information
+    - **KGS:** Weight in kilograms
+    - **CBM Reales:** Actual cubic meters
+    - **CBM Facturables:** Billable cubic meters
+    - **Detalle de la Carga:** Cargo description
+    - **Apilable:** SI/NO (stackable)
+    - **IMO:** Hazardous material class (if applicable)
+
+    ### 4. Cost Structure
+    - **Moneda:** USD, EUR, or ARS
+    - **Flete Neto:** Net freight cost
+    - **Flete Venta:** Freight sale price
+    - **Gastos Origen Neto:** Net origin costs
+    - **Gastos Origen Venta:** Origin costs sale price
+    - **Profit:** Automatically calculated
+
+    ### 5. Additional Information
+    - **Referencia:** Internal reference
+    - **Observaciones:** Notes
+    - **Validez de Tarifa:** Rate validity date
+
+    <CodeGroup>
+    ```typescript Example Values
+    {
+      impo_expo: "IMPO",
+      tipo: "GENERAL",
+      load_type: "LCL",
+      sale_condition: "FOB",
+      client_id: 1, // "Aceros Zapla SA"
+      origin_id: 1, // "Shanghai, China"
+      via_id: 21,   // "Buenos Aires, Argentina"
+      kgs: 5000,
+      billable_cbm: 15.5,
+      actual_cbm: 14.2,
+      description: "Repuestos automotor",
+      currency: "USD",
+      freight_net: 1200,
+      freight_sale: 1500,
+      origin_costs_net: 150,
+      origin_costs_sale: 200
+    }
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Save the quotation">
+    Click **Guardar** at the bottom of the form.
+
+    The application will:
+    1. Generate a unique quotation number (e.g., `COT-2603-0001`)
+    2. Calculate profit automatically
+    3. Set status to `ENCOTIZACION` (In Quotation)
+    4. Save via `POST /api/cotizaciones`
+    5. Redirect you to the quotation detail page
+  </Step>
+
+  <Step title="View your quotation">
+    You'll be taken to `/cotizaciones/{id}` where you can:
+    - **Edit** the quotation
+    - **Change status** (Ganada, Perdida, Pendiente)
+    - **Preview email** and export to PDF
+    - **Duplicate** to create similar quotations
+    - **Delete** if needed (soft delete)
+  </Step>
+</Steps>
+
+## Database Schema Overview
+
+Understanding the core tables helps you work with the application:
+
+<CardGroup cols={2}>
+  <Card title="users" icon="users">
+    User accounts with roles:
+    - DIRECTOR
+    - GERENTE
+    - COMERCIAL
+    - CSV
+    - OPERACIONES
+    - ADMINISTRACION
+  </Card>
+
+  <Card title="clients" icon="building">
+    Client companies with:
+    - Legal name & tax ID
+    - Client type (FFWW, Final, Both)
+    - Assigned sales representative
+  </Card>
+
+  <Card title="quotations" icon="file-invoice">
+    Main quotation entity:
+    - Quote number, date, time
+    - Operation type, route, cargo
+    - Cost structure & profit
+    - Status tracking
+  </Card>
+
+  <Card title="locations" icon="map-pin">
+    Origin and via ports:
+    - Name, country, region
+    - Type: origen or via
+  </Card>
+</CardGroup>
+
+For complete schema details, see [Database Schema](/architecture/database-schema).
+
+## Next Steps
+
+Now that you have ICL Cotizaciones running:
+
+<CardGroup cols={2}>
+  <Card title="Explore Features" icon="compass" href="/features/quotations">
+    Learn about client management, commercial agreements, and analytics
+  </Card>
+
+  <Card title="API Reference" icon="code" href="/api/auth/login">
+    Explore all available API endpoints
+  </Card>
+
+  <Card title="User Roles" icon="user-shield" href="/guides/user-roles">
+    Understand permission levels and access control
+  </Card>
+
+  <Card title="Deployment" icon="rocket" href="/operations/deployment">
+    Deploy to production with environment configuration
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion icon="triangle-exclamation" title="Database file not found">
+    If you get a database error, ensure you've run:
+    ```bash
+    npm run db:generate
+    npm run db:seed
+    ```
+    
+    The database file should exist at `data/icl.db`.
+  </Accordion>
+
+  <Accordion icon="lock" title="Login fails with correct credentials">
+    Check that:
+    1. The database was seeded properly
+    2. Password is exactly `icl2026` (case-sensitive)
+    3. Clear browser cookies and try again
+    4. Check the terminal for API errors
+  </Accordion>
+
+  <Accordion icon="plug" title="Port 3000 already in use">
+    If port 3000 is occupied, you can:
+    ```bash
+    # Use a different port
+    PORT=3001 npm run dev
+    ```
+    
+    Or kill the process using port 3000.
+  </Accordion>
+
+  <Accordion icon="rotate" title="Need to reset database">
+    To start fresh with seed data:
+    ```bash
+    npm run db:seed
+    ```
+    
+    This **deletes** the existing database and creates a new one with sample data.
+  </Accordion>
+</AccordionGroup>
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card title="Source Code" icon="github">
+    View the complete source code structure and implementation
+  </Card>
+
+  <Card title="Architecture" icon="sitemap">
+    Understand the application architecture and design patterns
+  </Card>
+</CardGroup>

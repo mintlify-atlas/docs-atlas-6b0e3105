@@ -1,0 +1,41 @@
+---
+title: 'Delete Commercial Agreement'
+api: 'DELETE /api/acuerdos/:id'
+---
+
+Deletes a commercial agreement. This endpoint requires admin permissions.
+
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can delete commercial agreements. This action is permanent and cannot be undone.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the commercial agreement to delete
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.iclcotizaciones.com/api/acuerdos/15 \
+  -H "Cookie: session=your_session_token"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "ok": true
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+</ResponseExample>

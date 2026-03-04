@@ -1,0 +1,53 @@
+---
+title: "Get Client"
+api: "GET /api/clientes/:id"
+description: "Retrieve a specific client by ID"
+---
+
+<Warning>
+  This endpoint is not currently implemented in the API. To retrieve client information, use the [List Clients](/api/clients/list) endpoint and filter by ID on the client side.
+</Warning>
+
+## Expected Implementation
+
+If implemented, this endpoint would retrieve a single client by their unique identifier.
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the client
+</ParamField>
+
+### Authentication
+
+Would require an active session, available to all authenticated roles.
+
+### Expected Response
+
+Would return a single client object with all fields:
+
+```json
+{
+  "id": 1,
+  "legal_name": "Empresa SA",
+  "tax_id": "20-12345678-9",
+  "phone": "+54 11 1234-5678",
+  "email": "contacto@empresa.com",
+  "client_type": "FFWW",
+  "user_id": 3,
+  "is_active": true,
+  "created_at": "2025-01-15T08:00:00.000Z",
+  "updated_at": "2026-02-20T14:30:00.000Z"
+}
+```
+
+## Workaround
+
+Use the List Clients endpoint and filter the results:
+
+```bash cURL
+curl -X GET https://your-domain.com/api/clientes \
+  -H "Cookie: session=your-session-token"
+```
+
+Then filter the array by `id` in your application code.

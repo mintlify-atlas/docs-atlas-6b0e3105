@@ -1,0 +1,282 @@
+---
+title: Quotation Management
+description: Create, edit, and manage freight quotations with automated pricing and workflow controls
+---
+
+## Overview
+
+The quotation management system is the core of ICL Cotizaciones, enabling commercial teams to create, track, and manage freight quotes for FCL and LCL shipments. Each quotation captures operational details, cargo specifications, cost structures, and status tracking.
+
+## Quotation Lifecycle
+
+Quotations flow through five status states:
+
+- **En cotizacion** (In quotation) - Initial draft state
+- **Pendiente** (Pending) - Awaiting response
+- **Pend A/C** (Pending approval/confirmation)
+- **Ganada** (Won) - Quote accepted by client
+- **Perdida** (Lost) - Quote rejected
+
+<Note>
+When changing status to Won, Lost, or Pend A/C, the system automatically sets the close date to today if not already specified.
+</Note>
+
+## Creating a New Quotation
+
+<Steps>
+  <Step title="Navigate to new quotation">
+    Click **Nueva Cotizacion** from the quotations list page. The system generates a unique quote number in format `COT-YYMM-NNNN`.
+  </Step>
+  
+  <Step title="Enter commercial data">
+    - **Fecha de carga**: Date of quotation creation
+    - **Comercial**: Sales representative (auto-assigned for non-admin users)
+    - **Cliente FFWW**: Freight forwarder client (required)
+    - **Cliente Final**: End customer (optional)
+    - **Referencia**: Internal reference code
+  </Step>
+  
+  <Step title="Configure operational details">
+    - **Impo / Expo**: Import or Export operation
+    - **Tipo**: Maritime or Air freight
+    - **FCL / LCL**: Full Container Load or Less than Container Load
+    - **Cond. Venta**: Sales condition (FOB, EXW, FCA, Other)
+    - **Moneda**: Currency (USD, EUR, ARS)
+    - **Origen**: Origin location
+    - **Via**: Destination port (required)
+  </Step>
+  
+  <Step title="Specify cargo details">
+    - **CBM Reales**: Actual cubic meters (required)
+    - **KGS**: Weight in kilograms (required)
+    - **Apilable**: Stackable (Yes/No)
+    - **IMO**: Hazardous materials (Yes/No)
+    - **Detalles de carga**: Cargo description
+    
+    If cargo is not stackable, additional **CBM Facturables** field appears for billing volume.
+  </Step>
+  
+  <Step title="Set pricing structure">
+    - **Flete Neto**: Net freight cost (auto-suggested for LCL from base rate table)
+    - **Tipo Flete Neto**: W/M (weight/measurement) or Flat rate
+    - **Flete Venta**: Sales freight price
+    - **Tipo Flete Venta**: W/M or Flat
+    
+    For FCA/EXW conditions:
+    - **Costos Netos**: Net origin costs (required)
+    - **Costos Venta**: Sales origin costs
+  </Step>
+  
+  <Step title="Save quotation">
+    Click **Guardar** to create the quotation. The system calculates profit automatically:
+    
+    ```
+    Profit = (Flete Venta - Flete Neto) + (Costos Venta - Costos Netos)
+    ```
+  </Step>
+</Steps>
+
+## Auto-Suggested Freight Rates (LCL)
+
+For LCL quotations, the system automatically suggests net freight rates based on the Port Rates master table:
+
+<CardGroup cols={2}>
+  <Card title="Rate Selection Logic" icon="calculator">
+    - **≤ 3 CBM**: Uses `rate_0_3_cbm`
+    - **3-5 CBM**: Uses `rate_3_5_cbm`
+    - **5-10 CBM**: Uses `rate_5_10_cbm`
+    - **> 10 CBM**: Uses `rate_10_15_cbm`
+  </Card>
+  
+  <Card title="Matching Criteria" icon="link">
+    The system matches the selected **Via** (destination) with `port_of_loading` in the Port Rates table by name.
+    
+    Suggested rate appears as a hint below the Flete Neto field.
+  </Card>
+</CardGroup>
+
+<Note>
+In edit mode, if Flete Neto already has a value, the suggestion appears as a hint only and does not overwrite the existing value.
+</Note>
+
+## Commercial Agreements Integration
+
+When you select a FFWW client that has a commercial agreement configured, the quotation form displays fiscal deposit costs in a read-only section:
+
+- Deconsolidation rates (W/M, Min, Max)
+- AGP per ton
+- Document handling fees
+- Log fee, Doc fee
+- Freight certificate
+- Insurance percentage and minimum
+- BL emission fee
+
+These values are loaded from the `commercial_agreements` table linked to the client.
+
+## Editing Quotations
+
+### Access Control
+
+<CardGroup cols={2}>
+  <Card title="Admin Users" icon="user-shield">
+    Directors, Managers, and Administration roles can edit any quotation in the system.
+  </Card>
+  
+  <Card title="Commercial Users" icon="user">
+    Can only edit quotations where `vendedor_id` matches their user ID. Attempting to access another user's quotation returns **403 Forbidden**.
+  </Card>
+</CardGroup>
+
+### Edit Actions
+
+- **Guardar**: Update quotation with validation
+- **Eliminar**: Delete quotation (requires confirmation)
+- **Duplicar**: Create new quotation with same details but reset status to "En cotizacion" and today's date
+- **Ver cotizacion**: Preview quotation email/PDF (only visible for Won quotations)
+
+## Quotation Validation
+
+Required fields enforced on save:
+
+| Field | Condition |
+|-------|----------|
+| Fecha | Always |
+| Comercial | Admin must select; auto-set for non-admin |
+| Cliente FFWW | Always |
+| Impo/Expo, Tipo, FCL/LCL, Cond. Venta, Moneda | Always |
+| Via | Always |
+| CBM Reales, KGS | Always |
+| Apilable, IMO | Always |
+| Flete Neto, Tipo Flete Neto | Always |
+| Costos Netos | Only if Cond. Venta is FCA or EXW |
+
+Validation errors scroll to the first invalid field with error message in sticky toolbar.
+
+## Filtering and Search
+
+### Server-side Filters
+
+Apply filters to narrow quotation list:
+
+- **Desde / Hasta**: Date range filter
+- **Comercial**: Sales representative (admin only)
+- **Estado**: Status (multiple selection)
+- **Cliente**: Client name (multiple selection)
+- **Via**: Destination port
+
+### Client-side Search
+
+The search box filters loaded results in real-time across:
+
+- Quote number
+- Client names (FFWW and Final)
+- Origin and destination
+- Sales representative
+- Cargo details
+- Reference and observations
+
+## Quotation Display
+
+Quotations are grouped by week and year (format: `2026-S09`) in descending order. Each row displays:
+
+### Datos Comerciales
+- Fecha de carga (Date + Time)
+- ID de Cotizacion
+- Status badge (color-coded)
+- Cliente FFWW
+- Cliente Final
+- Comercial (admin view only)
+- Referencia
+
+### Datos Operativos
+- Impo/Expo
+- Tipo
+- FCL/LCL
+- Cond. Venta
+- Origen
+- Via
+- Moneda
+- Pick Up address
+
+### Datos de la Carga
+- CBM Reales
+- KGS
+- Apilable
+- IMO
+- Detalle Carga
+
+### Estructura de Costos
+- Flete Neto / Tipo
+- Flete Venta / Tipo
+- Costos Netos / Venta
+- Profit (calculated)
+- Validez de Tarifa
+
+### Estado y Control
+- Fecha de Cierre
+- Observaciones
+
+<Note>
+Row background color matches quotation status for quick visual scanning:
+- Green: Ganada
+- Red: Perdida
+- Amber: Pendiente
+- Blue: Pend A/C
+- Pink: En cotizacion
+</Note>
+
+## Email Preview & PDF Export
+
+For quotations with status **Ganada** (Won), click **Ver cotizacion** to:
+
+1. Preview formatted quotation email in modal dialog
+2. **Seleccionar todo**: Select entire email content
+3. **Copiar**: Copy HTML-formatted content to clipboard (preserves formatting)
+4. **Descargar PDF**: Open print dialog to save as PDF
+
+The email preview includes:
+- Quote number and date
+- Client information
+- Freight type and route
+- Pricing breakdown
+- Validity period
+- Terms and conditions
+
+## Data Model Reference
+
+Key fields from `quotations` table (src/db/schema.ts:68-126):
+
+```typescript
+quotations {
+  id: integer (PK)
+  quote_number: text (unique, format: COT-YYMM-NNNN)
+  date: text
+  impo_expo: "IMPO" | "EXPO"
+  load_type: "FCL" | "LCL"
+  client_id: integer (FK → clients)
+  origin_id: integer (FK → locations)
+  via_id: integer (FK → locations)
+  kgs: real
+  billable_cbm: real
+  actual_cbm: real
+  currency: "USD" | "EUR" | "ARS"
+  freight_net: real
+  freight_sale: real
+  status: "SI" | "NO" | "PEND" | "ENCOTIZACION" | "PEND A/C"
+  profit: real (calculated)
+  user_id: integer (FK → users)
+  week: integer (derived from date)
+  year: integer (derived from date)
+}
+```
+
+## API Endpoints
+
+- `GET /api/cotizaciones` - List quotations with filters
+- `GET /api/cotizaciones/next-nro` - Get next quote number
+- `POST /api/cotizaciones` - Create new quotation
+- `GET /api/cotizaciones/[id]` - Get quotation details
+- `PUT /api/cotizaciones/[id]` - Update quotation
+- `DELETE /api/cotizaciones/[id]` - Delete quotation
+
+Source: src/app/api/cotizaciones/route.ts

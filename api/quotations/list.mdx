@@ -1,0 +1,304 @@
+---
+title: List Quotations
+api: GET /api/cotizaciones
+---
+
+Retrieves a list of quotations with optional filters.
+
+## Authorization
+
+Requires active session. Non-admin users can only see their own quotations (automatically filtered by `vendedor_id = session.userId`).
+
+## Query Parameters
+
+<ParamField query="fecha_desde" type="string" format="YYYY-MM-DD">
+  Filter quotations from this date (inclusive)
+</ParamField>
+
+<ParamField query="fecha_hasta" type="string" format="YYYY-MM-DD">
+  Filter quotations until this date (inclusive)
+</ParamField>
+
+<ParamField query="cliente_id" type="string">
+  Comma-separated client IDs. Example: `1,2,5`
+</ParamField>
+
+<ParamField query="cerrada" type="string">
+  Comma-separated status values. Possible values:
+  - `ENCOTIZACION` - In quotation
+  - `SI` - Won
+  - `NO` - Lost
+  - `PEND` - Pending
+  - `PEND A/C` - Pending approval
+  
+  Example: `SI,PEND`
+</ParamField>
+
+<ParamField query="vendedor_id" type="string">
+  Comma-separated seller IDs. Example: `3,7`
+  
+  **Note:** Only available for admin users. Non-admin users automatically see only their own quotations.
+</ParamField>
+
+<ParamField query="via_id" type="number">
+  Filter by via (route) ID
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="array">
+  Array of quotation objects ordered by date (descending) and ID (descending)
+  
+  <Expandable title="Quotation object">
+    <ResponseField name="id" type="number">
+      Quotation ID
+    </ResponseField>
+    
+    <ResponseField name="nro_cotizacion" type="string">
+      Auto-generated quotation number in format `COT-YYMM-NNNN`
+      
+      Example: `COT-2602-0001`
+    </ResponseField>
+    
+    <ResponseField name="fecha" type="string" format="YYYY-MM-DD">
+      Quotation date
+    </ResponseField>
+    
+    <ResponseField name="hora" type="string" format="HH:mm">
+      Quotation time
+    </ResponseField>
+    
+    <ResponseField name="impo_expo" type="string">
+      Import/Export. Values: `IMPO`, `EXPO`
+    </ResponseField>
+    
+    <ResponseField name="tipo" type="string">
+      Quotation type (optional)
+    </ResponseField>
+    
+    <ResponseField name="fcl_lcl" type="string">
+      Load type. Values: `FCL`, `LCL`
+    </ResponseField>
+    
+    <ResponseField name="cond_venta" type="string">
+      Sale condition (optional)
+    </ResponseField>
+    
+    <ResponseField name="cliente_id" type="number">
+      Client ID (foreign key)
+    </ResponseField>
+    
+    <ResponseField name="cliente_nombre" type="string">
+      Client legal name (joined from clients table)
+    </ResponseField>
+    
+    <ResponseField name="origen_id" type="number">
+      Origin location ID (foreign key)
+    </ResponseField>
+    
+    <ResponseField name="origen_nombre" type="string">
+      Origin location name (joined from locations table)
+    </ResponseField>
+    
+    <ResponseField name="origen_pais" type="string">
+      Origin country (joined from locations table)
+    </ResponseField>
+    
+    <ResponseField name="via_id" type="number">
+      Via/route location ID (foreign key)
+    </ResponseField>
+    
+    <ResponseField name="via_nombre" type="string">
+      Via/route name (joined from locations table)
+    </ResponseField>
+    
+    <ResponseField name="cliente_final" type="string">
+      End client name (optional)
+    </ResponseField>
+    
+    <ResponseField name="kgs" type="number">
+      Weight in kilograms
+    </ResponseField>
+    
+    <ResponseField name="cbm_facturables" type="number">
+      Billable cubic meters
+    </ResponseField>
+    
+    <ResponseField name="cbm_reales" type="number">
+      Actual cubic meters
+    </ResponseField>
+    
+    <ResponseField name="detalle" type="string">
+      Cargo description
+    </ResponseField>
+    
+    <ResponseField name="imo" type="string">
+      IMO classification (for hazardous materials)
+    </ResponseField>
+    
+    <ResponseField name="apilable" type="string">
+      Stackable. Values: `SI`, `NO`
+    </ResponseField>
+    
+    <ResponseField name="pickup_address" type="string">
+      Pickup address (optional)
+    </ResponseField>
+    
+    <ResponseField name="moneda" type="string">
+      Currency. Values: `USD`, `EUR`, `ARS`
+    </ResponseField>
+    
+    <ResponseField name="gastos_origen_neto" type="number">
+      Origin costs (net)
+    </ResponseField>
+    
+    <ResponseField name="gastos_origen_venta" type="number">
+      Origin costs (sale price)
+    </ResponseField>
+    
+    <ResponseField name="flete_neto" type="number">
+      Freight cost (net)
+    </ResponseField>
+    
+    <ResponseField name="flete_venta" type="number">
+      Freight cost (sale price)
+    </ResponseField>
+    
+    <ResponseField name="tipo_fn" type="string">
+      Freight net type (optional)
+    </ResponseField>
+    
+    <ResponseField name="tipo_fv" type="string">
+      Freight sale type (optional)
+    </ResponseField>
+    
+    <ResponseField name="cerrada" type="string">
+      Status. Values: `ENCOTIZACION`, `SI`, `NO`, `PEND`, `PEND A/C`
+    </ResponseField>
+    
+    <ResponseField name="fecha_cierre" type="string" format="YYYY-MM-DD">
+      Close date (only when status is `SI`, `NO`, or `PEND A/C`)
+    </ResponseField>
+    
+    <ResponseField name="orden_venta" type="string">
+      Sales order reference (optional)
+    </ResponseField>
+    
+    <ResponseField name="observaciones" type="string">
+      Notes (optional)
+    </ResponseField>
+    
+    <ResponseField name="referencia" type="string">
+      Reference (optional)
+    </ResponseField>
+    
+    <ResponseField name="profit" type="number">
+      Calculated profit: `(flete_venta - flete_neto) + (gastos_origen_venta - gastos_origen_neto)`
+    </ResponseField>
+    
+    <ResponseField name="validez_tarifa" type="string">
+      Rate validity (optional)
+    </ResponseField>
+    
+    <ResponseField name="semana" type="number">
+      Week number (computed from date)
+    </ResponseField>
+    
+    <ResponseField name="mes" type="number">
+      Month (computed from date)
+    </ResponseField>
+    
+    <ResponseField name="anio" type="number">
+      Year (computed from date)
+    </ResponseField>
+    
+    <ResponseField name="vendedor_id" type="number">
+      Seller/user ID (foreign key)
+    </ResponseField>
+    
+    <ResponseField name="vendedor_nombre" type="string">
+      Seller full name (joined from users table)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://your-domain.com/api/cotizaciones?fecha_desde=2026-02-01&fecha_hasta=2026-02-28&cerrada=SI,PEND' \
+  -H 'Cookie: session=your-session-token'
+```
+
+```bash Filter by client
+curl -X GET 'https://your-domain.com/api/cotizaciones?cliente_id=3,5' \
+  -H 'Cookie: session=your-session-token'
+```
+
+```bash Admin: Filter by seller
+curl -X GET 'https://your-domain.com/api/cotizaciones?vendedor_id=7' \
+  -H 'Cookie: session=your-session-token'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+[
+  {
+    "id": 1,
+    "nro_cotizacion": "COT-2602-0001",
+    "fecha": "2026-02-10",
+    "hora": "14:30",
+    "impo_expo": "IMPO",
+    "tipo": null,
+    "fcl_lcl": "LCL",
+    "cond_venta": null,
+    "cliente_id": 3,
+    "cliente_nombre": "Empresa SA",
+    "origen_id": 2,
+    "origen_nombre": "Shanghai",
+    "origen_pais": "China",
+    "via_id": 1,
+    "via_nombre": "Buenos Aires",
+    "cliente_final": null,
+    "kgs": 500.0,
+    "cbm_facturables": 2.5,
+    "cbm_reales": 2.3,
+    "detalle": "Electronics components",
+    "imo": null,
+    "apilable": "SI",
+    "pickup_address": null,
+    "moneda": "USD",
+    "gastos_origen_neto": 100.0,
+    "gastos_origen_venta": 150.0,
+    "flete_neto": 500.0,
+    "flete_venta": 650.0,
+    "tipo_fn": null,
+    "tipo_fv": null,
+    "cerrada": "ENCOTIZACION",
+    "fecha_cierre": null,
+    "orden_venta": null,
+    "observaciones": null,
+    "referencia": null,
+    "profit": 200.0,
+    "validez_tarifa": null,
+    "semana": 7,
+    "mes": 2,
+    "anio": 2026,
+    "vendedor_id": 5,
+    "vendedor_nombre": "María López"
+  }
+]
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- **Role-based access:** Admin users see all quotations. Non-admin users only see quotations they created.
+- Results are ordered by date (descending) and ID (descending)
+- All query parameters are optional and can be combined
+- Multiple IDs can be passed as comma-separated values for `cliente_id` and `vendedor_id`

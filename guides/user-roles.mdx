@@ -1,0 +1,189 @@
+---
+title: User Roles and Permissions
+description: Understanding the six user roles in ICL Cotizaciones and their access levels
+---
+
+ICL Cotizaciones has a role-based permission system with six distinct roles. Each role has specific capabilities designed to match job responsibilities within your freight quotation workflow.
+
+## Role Overview
+
+The application has two main permission levels:
+- **Administrative roles** (Director, Gerente, Administración) have full access to all features
+- **Operational roles** (Comercial, Operaciones, CSV) have restricted access limited to their own data
+
+## The Six Roles
+
+### DIRECTOR
+
+**Full system access with all privileges**
+
+<Check>View and edit all quotations across all sales representatives</Check>
+<Check>Manage master data (clients, locations, pricing, users)</Check>
+<Check>Access global dashboards and analytics</Check>
+<Check>Create and assign users</Check>
+<Check>Configure commercial agreements</Check>
+<Check>Export and generate reports</Check>
+
+Directors have complete visibility into company operations and can override any restriction. Use this role for C-level executives and system administrators.
+
+### GERENTE
+
+**Management-level access for supervisors**
+
+<Check>View and edit all quotations across the company</Check>
+<Check>Manage master data and configurations</Check>
+<Check>Access global analytics and dashboards</Check>
+<Check>Create and modify commercial agreements</Check>
+<Check>Export data and reports</Check>
+<Warning>Cannot create or manage user accounts</Warning>
+
+Managers oversee quotation operations and can review work from all sales representatives. This role is ideal for operations managers and department heads.
+
+### ADMINISTRACION
+
+**Administrative access for back-office operations**
+
+<Check>View all quotations across sales representatives</Check>
+<Check>Manage master data (clients, pricing tables, locations)</Check>
+<Check>Configure commercial agreements</Check>
+<Check>Access analytics dashboards</Check>
+<Check>Process and close quotations</Check>
+
+Administration users support the commercial team with data management and quotation processing, but typically don't create new quotations themselves.
+
+### COMERCIAL
+
+**Sales representative role with restricted access**
+
+<Check>Create and edit their own quotations only</Check>
+<Check>View client catalogs and pricing information</Check>
+<Check>Access their personal performance dashboard</Check>
+<Check>Duplicate their own quotations</Check>
+<Warning>Cannot view other representatives' quotations</Warning>
+<Warning>Cannot modify master data or configurations</Warning>
+<Warning>Cannot access global analytics</Warning>
+
+Comercial users are automatically assigned as the owner when creating quotations. They can only access and modify quotations where they are listed as the sales representative.
+
+### OPERACIONES
+
+**Operations role with quotation viewing access**
+
+<Check>View their assigned quotations</Check>
+<Check>Access read-only catalogs</Check>
+<Check>Update quotation status</Check>
+<Check>View their performance metrics</Check>
+<Warning>Restricted to their own data</Warning>
+<Warning>Cannot modify master data</Warning>
+
+Operations users support the fulfillment process and track quotation status through completion.
+
+### CSV
+
+**Customer service role with limited access**
+
+<Check>View assigned quotations</Check>
+<Check>Access client information</Check>
+<Check>View pricing and routing data</Check>
+<Warning>Restricted data access</Warning>
+<Warning>Cannot modify configurations</Warning>
+
+CSV (Customer Service) users assist clients with quotation inquiries and status updates.
+
+## Permission Matrix
+
+| Feature | Director | Gerente | Administración | Comercial | Operaciones | CSV |
+|---------|----------|---------|----------------|-----------|-------------|-----|
+| **Quotations** |
+| View all quotations | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| View own quotations | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Create quotations | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Edit all quotations | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Edit own quotations | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Delete quotations | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Assign to other users | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| **Master Data** |
+| Manage clients | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Manage locations | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Manage pricing tables | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Manage users | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| View catalogs | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Commercial Agreements** |
+| Create/edit agreements | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| View agreements | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Analytics** |
+| Global dashboards | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Personal dashboard | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Sales by representative | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Client analytics | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+
+## Role-Based Workflow Considerations
+
+### When Creating Quotations
+
+**Administrative roles** can select any sales representative in the "Comercial" field. The selected representative will become the quotation owner.
+
+**Operational roles** are automatically set as the owner of any quotation they create. The "Comercial" field is pre-filled and cannot be changed.
+
+### Client Assignment
+
+Clients can be assigned to a sales representative via the `user_id` field. When a Comercial user logs in:
+- They only see clients assigned to them
+- They can only create quotations for their assigned clients
+- They cannot view or modify quotations from other representatives
+
+Administrative users see all clients regardless of assignment.
+
+### Data Filtering
+
+The application automatically applies data filtering based on role:
+
+<CodeGroup>
+```text Non-Admin Filter
+GET /api/cotizaciones
+→ WHERE vendedor_id = current_user.id
+→ Only returns user's own quotations
+```
+
+```text Admin Filter
+GET /api/cotizaciones
+→ No automatic filter applied
+→ Returns all quotations (can apply manual filters)
+```
+</CodeGroup>
+
+## Best Practices
+
+<Tip>
+**Assign roles based on job function, not seniority.** A senior sales representative should have the Comercial role, not Director, to maintain proper data segregation.
+</Tip>
+
+<Warning>
+**Director role should be limited.** Only assign Director to users who need to manage user accounts. For most management tasks, Gerente is sufficient.
+</Warning>
+
+<Info>
+**Sales representatives work independently.** The Comercial role ensures each representative only sees their own pipeline, maintaining confidentiality between team members.
+</Info>
+
+## Checking Your Role
+
+To verify your current role:
+
+<Steps>
+  <Step title="Check the sidebar menu">
+    If you see a "Maestros" (Masters) section with options like Clientes, Usuarios, Pricing, you have an administrative role.
+  </Step>
+  
+  <Step title="Try creating a quotation">
+    Open a new quotation form. If the "Comercial" field is editable, you have an administrative role. If it's pre-filled with your name, you have an operational role.
+  </Step>
+  
+  <Step title="Navigate to dashboards">
+    Go to Dashboard → General. If you can access "Por Vendedor" (By Sales Rep) views, you have an administrative role.
+  </Step>
+</Steps>
+
+<Note>
+Your role is set by a system administrator when your account is created. If you need different permissions, contact your Director or system administrator.
+</Note>

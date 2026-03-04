@@ -1,0 +1,530 @@
+---
+title: Routing Architecture
+description: Next.js App Router structure, route groups, and API endpoints
+icon: route
+---
+
+## App Router Overview
+
+ICL Cotizaciones uses **Next.js 16 App Router** with file-system based routing, server components by default, and co-located API routes.
+
+<Note>
+  The application uses route groups, dynamic routes, and layout-based authentication without implementing Next.js middleware.
+</Note>
+
+## Route Tree
+
+```
+src/app/
+├── layout.tsx                          ← Root layout (HTML, Work Sans font)
+├── page.tsx                            ← Redirect: /cotizaciones if logged in, /login if not
+│
+├── login/
+│   └── page.tsx                        ← Login form (client component)
+│
+└── (dashboard)/                        ← Route group (no URL segment)
+    ├── layout.tsx                      ← Protected layout: session guard + Header + Sidebar
+    │
+    ├── cotizaciones/
+    │   ├── page.tsx                    ← Quotations list with filters
+    │   ├── nueva/
+    │   │   └── page.tsx                ← New quotation form
+    │   └── [id]/
+    │       └── page.tsx                ← View/edit quotation (dynamic route)
+    │
+    ├── dashboard/
+    │   ├── general/
+    │   │   └── page.tsx                ← General dashboard (charts)
+    │   ├── por-cliente/
+    │   │   └── page.tsx                ← Dashboard grouped by client
+    │   ├── filtradas/
+    │   │   └── page.tsx                ← Dashboard with advanced filters
+    │   ├── por-vendedor/
+    │   │   └── page.tsx                ← Dashboard grouped by sales rep
+    │   └── contactos/
+    │       └── page.tsx                ← Contacts dashboard
+    │
+    └── maestros/
+        ├── clientes/
+        │   └── page.tsx                ← Clients CRUD (admin via API; sidebar hidden for non-admin)
+        ├── origenes/
+        │   └── page.tsx                ← Origins CRUD
+        ├── vias/
+        │   └── page.tsx                ← Routes CRUD
+        ├── acuerdos/
+        │   └── page.tsx                ← Commercial agreements CRUD
+        ├── usuarios/
+        │   └── page.tsx                ← Users CRUD
+        ├── locaciones/
+        │   └── page.tsx                ← Locations CRUD (origins + routes)
+        ├── pricing-netos/
+        │   └── page.tsx                ← Net pricing table (unified FCL + LCL)
+        └── tarifario-puertos-base/
+            └── page.tsx                ← Base port rates
+```
+
+## Route Table
+
+### Public Routes
+
+| URL | Purpose | Layout | Auth Required | Data Source |
+|-----|---------|--------|---------------|-------------|
+| `/` | Smart redirect | Root | No (reads session) | `getSession()` server-side |
+| `/login` | Login form | Root | No | `POST /api/auth/login` |
+
+### Protected Routes (Dashboard)
+
+All routes under `(dashboard)/` are protected by the layout session guard.
+
+#### Quotations
+
+| URL | Purpose | Data APIs |
+|-----|---------|----------|
+| `/cotizaciones` | Paginated quotations list | `GET /api/cotizaciones` |
+| `/cotizaciones/nueva` | Create new quotation | `GET /api/cotizaciones/next-nro`<br/>`GET /api/clientes`<br/>`GET /api/origenes`<br/>`GET /api/vias`<br/>`GET /api/usuarios`<br/>`GET /api/auth/me`<br/>`GET /api/acuerdos`<br/>`GET /api/tarifario-puertos-base` |
+| `/cotizaciones/[id]` | View/edit quotation | `GET /api/cotizaciones/[id]`<br/>Same APIs as `/nueva` |
+
+#### Dashboards
+
+| URL | Purpose | Data APIs |
+|-----|---------|----------|
+| `/dashboard/general` | General charts | `GET /api/dashboard?tipo=general` |
+| `/dashboard/por-cliente` | Client metrics | `GET /api/dashboard?tipo=por-cliente` |
+| `/dashboard/filtradas` | Filtered dashboard | `GET /api/dashboard?tipo=filtradas` |
+| `/dashboard/por-vendedor` | Sales rep metrics | `GET /api/dashboard?tipo=por-vendedor` |
+| `/dashboard/contactos` | Contacts dashboard | `GET /api/dashboard?tipo=contactos` |
+
+#### Master Data (Admin Only)
+
+<Warning>
+  The sidebar shows master data sections only for admin roles (`DIRECTOR`, `GERENTE`, `ADMINISTRACION`). API endpoints enforce authorization with `isAdmin()` checks.
+</Warning>
+
+| URL | Purpose | Data APIs |
+|-----|---------|----------|
+| `/maestros/clientes` | Clients CRUD | `GET/POST /api/clientes`<br/>`PUT/DELETE /api/clientes/[id]` |
+| `/maestros/origenes` | Origins CRUD | `GET/POST /api/origenes`<br/>`PUT/DELETE /api/origenes/[id]` |
+| `/maestros/vias` | Routes CRUD | `GET/POST /api/vias`<br/>`PUT/DELETE /api/vias/[id]` |
+| `/maestros/acuerdos` | Commercial agreements CRUD | `GET/POST /api/acuerdos`<br/>`GET/PUT/DELETE /api/acuerdos/[id]` |
+| `/maestros/usuarios` | Users CRUD | `GET/POST /api/usuarios`<br/>`PUT/DELETE /api/usuarios/[id]` |
+| `/maestros/locaciones` | Locations CRUD | `GET/POST /api/origenes`<br/>`GET/POST /api/vias`<br/>Plus respective `[id]` routes |
+| `/maestros/pricing-netos` | Net pricing table | `GET/POST /api/pricing-netos`<br/>`PUT/DELETE /api/pricing-netos/[id]` |
+| `/maestros/tarifario-puertos-base` | Base port rates | `GET/POST /api/tarifario-puertos-base`<br/>`PUT/DELETE /api/tarifario-puertos-base/[id]` |
+
+<Note>
+  Master data pages are client components without built-in guards. **Effective protection is enforced at the API level.** Non-admin users who manually navigate to `/maestros/*` cannot perform mutations.
+</Note>
+
+## API Routes
+
+### Authentication
+
+| Endpoint | Methods | Access Control | Purpose |
+|----------|---------|----------------|----------|
+| `/api/auth/login` | POST | Public | Validate credentials, create session |
+| `/api/auth/logout` | POST | Authenticated | Destroy session |
+| `/api/auth/me` | GET | Authenticated | Get current user data |
+
+### Quotations
+
+| Endpoint | Methods | Access Control | Purpose |
+|----------|---------|----------------|----------|
+| `/api/cotizaciones` | GET | Filtered by `user_id` for non-admin | List quotations |
+| `/api/cotizaciones` | POST | Any authenticated user | Create quotation |
+| `/api/cotizaciones/[id]` | GET | Owner or admin | Get quotation by ID |
+| `/api/cotizaciones/[id]` | PUT | Owner or admin | Update quotation |
+| `/api/cotizaciones/[id]` | DELETE | Owner or admin | Delete quotation |
+| `/api/cotizaciones/next-nro` | GET | Authenticated | Generate next quote number |
+
+### Master Data
+
+<Tabs>
+  <Tab title="Clients">
+    | Endpoint | Methods | Access Control |
+    |----------|---------|----------------|
+    | `/api/clientes` | GET | Any authenticated user |
+    | `/api/clientes` | POST | Admin only |
+    | `/api/clientes/[id]` | PUT | Admin only |
+    | `/api/clientes/[id]` | DELETE | Admin only |
+  </Tab>
+  
+  <Tab title="Users">
+    | Endpoint | Methods | Access Control |
+    |----------|---------|----------------|
+    | `/api/usuarios` | GET | Admin only |
+    | `/api/usuarios` | POST | Admin only |
+    | `/api/usuarios/[id]` | PUT | Admin only |
+    | `/api/usuarios/[id]` | DELETE | Admin only |
+  </Tab>
+  
+  <Tab title="Locations">
+    | Endpoint | Methods | Access Control |
+    |----------|---------|----------------|
+    | `/api/origenes` | GET | Any authenticated user |
+    | `/api/origenes` | POST | Admin only |
+    | `/api/origenes/[id]` | PUT | Admin only |
+    | `/api/origenes/[id]` | DELETE | Admin only |
+    | `/api/vias` | GET | Any authenticated user |
+    | `/api/vias` | POST | Admin only |
+    | `/api/vias/[id]` | PUT | Admin only |
+    | `/api/vias/[id]` | DELETE | Admin only |
+  </Tab>
+  
+  <Tab title="Agreements">
+    | Endpoint | Methods | Access Control |
+    |----------|---------|----------------|
+    | `/api/acuerdos` | GET | Any authenticated user |
+    | `/api/acuerdos` | POST | Admin only |
+    | `/api/acuerdos/[id]` | GET | Any authenticated user |
+    | `/api/acuerdos/[id]` | PUT | Admin only |
+    | `/api/acuerdos/[id]` | DELETE | Admin only |
+  </Tab>
+  
+  <Tab title="Pricing">
+    | Endpoint | Methods | Access Control |
+    |----------|---------|----------------|
+    | `/api/pricing-netos` | GET | Any authenticated user |
+    | `/api/pricing-netos` | POST | Admin only |
+    | `/api/pricing-netos/[id]` | PUT | Admin only |
+    | `/api/pricing-netos/[id]` | DELETE | Admin only |
+    | `/api/tarifario-puertos-base` | GET | Any authenticated user |
+    | `/api/tarifario-puertos-base` | POST | Admin only |
+    | `/api/tarifario-puertos-base/[id]` | PUT | Admin only |
+    | `/api/tarifario-puertos-base/[id]` | DELETE | Admin only |
+  </Tab>
+</Tabs>
+
+### Analytics
+
+| Endpoint | Methods | Access Control | Purpose |
+|----------|---------|----------------|----------|
+| `/api/dashboard` | GET | Authenticated (filtered by role) | Dashboard data with `?tipo=` query param |
+
+<Note>
+  **Admin role** = `DIRECTOR`, `GERENTE`, or `ADMINISTRACION` (see `src/lib/utils.ts:isAdmin()` at line 36).
+</Note>
+
+## Route Groups
+
+### `(dashboard)` Group
+
+The `(dashboard)` folder is a **route group** that:
+- Does **not** create a URL segment (`/dashboard` does not exist)
+- Shares a common layout (`(dashboard)/layout.tsx`)
+- Applies session guard to all nested routes
+- Renders Header and Sidebar for authenticated users
+
+**Why use route groups?**
+- Organize related routes without affecting URLs
+- Share layouts across multiple route segments
+- Apply authentication guards at a single point
+
+## Layout Hierarchy
+
+```
+Root Layout (app/layout.tsx)
+├── Applies global styles and fonts
+├── Wraps entire application
+│
+└── Dashboard Layout ((dashboard)/layout.tsx)
+    ├── Checks session with getSession()
+    ├── Redirects to /login if not authenticated
+    ├── Renders Header component
+    ├── Renders Sidebar component (filtered by role)
+    └── Renders page content in <main>
+```
+
+### Root Layout
+
+```typescript
+// src/app/layout.tsx
+import { Work_Sans } from "next/font/google";
+import "./globals.css";
+
+const workSans = Work_Sans({ subsets: ["latin"] });
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="es">
+      <body className={workSans.className}>{children}</body>
+    </html>
+  );
+}
+```
+
+### Dashboard Layout
+
+```typescript
+// src/app/(dashboard)/layout.tsx
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import { Header } from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession();
+
+  if (!session.isLoggedIn) {
+    redirect("/login");
+  }
+
+  return (
+    <div className="flex h-screen">
+      <Sidebar role={session.rol} />
+      <div className="flex-1 flex flex-col">
+        <Header user={session} />
+        <main className="flex-1 overflow-auto p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+## Dynamic Routes
+
+### Quotation Detail `[id]`
+
+Dynamic route for viewing and editing individual quotations.
+
+```typescript
+// src/app/(dashboard)/cotizaciones/[id]/page.tsx
+import { db } from "@/db/db";
+import { quotations } from "@/db/schema";
+import { eq } from "drizzle-orm";
+
+interface PageProps {
+  params: { id: string };
+}
+
+export default async function QuotationPage({ params }: PageProps) {
+  const quotation = await db
+    .select()
+    .from(quotations)
+    .where(eq(quotations.id, parseInt(params.id)))
+    .get();
+
+  if (!quotation) {
+    return <div>Cotización no encontrada</div>;
+  }
+
+  return <QuotationForm initialData={quotation} mode="edit" />;
+}
+```
+
+**URL Examples:**
+- `/cotizaciones/1` → `params.id = "1"`
+- `/cotizaciones/42` → `params.id = "42"`
+
+### API Dynamic Routes
+
+API routes also support dynamic segments.
+
+```typescript
+// src/app/api/cotizaciones/[id]/route.ts
+import { NextResponse } from "next/server";
+import { db } from "@/db/db";
+import { quotations } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { getSession } from "@/lib/session";
+
+interface RouteContext {
+  params: { id: string };
+}
+
+export async function GET(
+  request: Request,
+  { params }: RouteContext
+) {
+  const session = await getSession();
+
+  if (!session.isLoggedIn) {
+    return NextResponse.json(
+      { error: "No autorizado" },
+      { status: 401 }
+    );
+  }
+
+  const quotation = await db
+    .select()
+    .from(quotations)
+    .where(eq(quotations.id, parseInt(params.id)))
+    .get();
+
+  if (!quotation) {
+    return NextResponse.json(
+      { error: "No encontrado" },
+      { status: 404 }
+    );
+  }
+
+  // Check ownership
+  if (!isAdmin(session.rol) && quotation.user_id !== session.userId) {
+    return NextResponse.json(
+      { error: "Acceso denegado" },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json(quotation);
+}
+```
+
+## Redirect Logic
+
+### Root Page Redirect
+
+```typescript
+// src/app/page.tsx
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+
+export default async function HomePage() {
+  const session = await getSession();
+  
+  if (session.isLoggedIn) {
+    redirect("/cotizaciones");
+  } else {
+    redirect("/login");
+  }
+}
+```
+
+### After Login Redirect
+
+```typescript
+// src/app/login/page.tsx (client component)
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: formData.get("email"),
+        password: formData.get("password"),
+      }),
+    });
+
+    if (res.ok) {
+      router.push("/cotizaciones"); // Redirect on success
+    } else {
+      setError("Credenciales inválidas");
+    }
+  }
+
+  return <form onSubmit={handleSubmit}>{/* ... */}</form>;
+}
+```
+
+## No Middleware Implementation
+
+<Warning>
+  The application **does not** implement Next.js middleware (`middleware.ts`). All authentication is handled via:
+  - Layout-level session checks (server-side redirect)
+  - API route manual guards
+  
+  This approach is simpler but means authentication logic is duplicated across API routes.
+</Warning>
+
+**Alternative with Middleware:**
+
+```typescript
+// middleware.ts (NOT currently implemented)
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getSession } from "@/lib/session";
+
+export async function middleware(request: NextRequest) {
+  const session = await getSession();
+
+  // Protect all routes under /cotizaciones, /dashboard, /maestros
+  if (
+    request.nextUrl.pathname.startsWith("/cotizaciones") ||
+    request.nextUrl.pathname.startsWith("/dashboard") ||
+    request.nextUrl.pathname.startsWith("/maestros")
+  ) {
+    if (!session.isLoggedIn) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Server Components by Default">
+    Use server components for pages that fetch data. Only add `"use client"` when you need:
+    - Event handlers (onClick, onChange, etc.)
+    - React hooks (useState, useEffect, etc.)
+    - Browser APIs (window, localStorage, etc.)
+  </Accordion>
+
+  <Accordion title="Co-locate API Routes">
+    Keep API routes in `app/api/` organized by resource:
+    ```
+    app/api/
+    ├── auth/
+    ├── cotizaciones/
+    ├── clientes/
+    └── usuarios/
+    ```
+  </Accordion>
+
+  <Accordion title="Use Route Groups for Layout Sharing">
+    Route groups like `(dashboard)` allow you to:
+    - Share layouts without creating URL segments
+    - Apply authentication guards at a single point
+    - Organize related routes logically
+  </Accordion>
+
+  <Accordion title="Validate Sessions Early">
+    Always check session status at the top of:
+    - Protected layouts (redirect if not logged in)
+    - API route handlers (return 401 if not authenticated)
+    - Server actions (validate before mutations)
+  </Accordion>
+</AccordionGroup>
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/architecture/authentication">
+    Learn about iron-session and authorization guards
+  </Card>
+  <Card title="API Reference" icon="brackets-curly" href="/api/auth/login">
+    Browse all API endpoints
+  </Card>
+  <Card title="Next.js App Router" icon="book" href="https://nextjs.org/docs/app">
+    Official Next.js App Router documentation
+  </Card>
+  <Card title="Database Schema" icon="database" href="/architecture/database-schema">
+    View complete database schema and relationships
+  </Card>
+</CardGroup>

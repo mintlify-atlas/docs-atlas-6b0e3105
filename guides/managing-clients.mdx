@@ -1,0 +1,382 @@
+---
+title: Managing Clients
+description: Complete guide to creating, editing, and managing client records and commercial agreements
+---
+
+Client management is a core function in ICL Cotizaciones. This guide covers the complete client lifecycle from creation to commercial agreement setup.
+
+<Info>
+Client management is restricted to **administrative roles** (Director, Gerente, Administración). Comercial and Operaciones users can view clients but cannot create or modify them.
+</Info>
+
+## Understanding Client Types
+
+ICL Cotizaciones supports three client types:
+
+**FFWW** (Freight Forwarder)
+- Companies that act as intermediaries in the shipping process
+- Can have a "Cliente Final" (end customer) associated in quotations
+- Most common client type for freight forwarding businesses
+
+**Final** (End Customer)
+- Direct shippers who are the actual cargo owners
+- These clients can be selected as the "Cliente Final" in FFWW quotations
+- Useful for tracking ultimate customers in your supply chain
+
+**Both** (Ambos)
+- Clients that act as both freight forwarder and end customer
+- Flexible type for companies that sometimes book direct and sometimes refer business
+
+<Note>
+Client type affects which fields appear in commercial agreements. Choose carefully based on how you do business with this client.
+</Note>
+
+## Viewing and Filtering Clients
+
+### Accessing the Client List
+
+From the sidebar, navigate to **Maestros** → **Clientes**.
+
+The client list shows:
+- **Razón Social** - Legal company name
+- **CUIT** - Tax ID number
+- **Comercial** - Assigned sales representative
+- **Tipo** - Client type (FFWW/Final/Both badge)
+- **Teléfono** - Phone number
+- **Email** - Contact email
+- **Estado** - Active/Inactive status
+
+Clients are grouped by type (FFWW, Final, Both) with expandable sections.
+
+### Using Filters
+
+The filter panel lets you narrow down the client list:
+
+**Tipo** - Multi-select filter for client types (FFWW, Final, Ambos)
+
+**Vendedor** - Multi-select filter for assigned sales representatives
+
+**Buscar** - Text search across:
+- Razón Social (company name)
+- CUIT (tax ID)
+- Email address
+
+Click **Limpiar filtros** to reset all filters and show the complete list.
+
+## Creating a New Client
+
+<Steps>
+  <Step title="Open the client dialog">
+    Click the **Nuevo Cliente** button in the top right of the client list.
+  </Step>
+  
+  <Step title="Enter basic information">
+    **Razón Social** (required) - Legal company name
+    - This appears in quotations and reports
+    - Use the official business name for invoicing
+    
+    **CUIT Facturación** - Tax ID in format XX-XXXXXXXX-X
+    - Used for billing and tax documentation
+    - Optional but recommended
+    
+    **Teléfono** - Contact phone number (optional)
+    - Format: +54 11 XXXX-XXXX
+    
+    **Email** - Primary contact email (optional)
+    - Used for sending quotations
+  </Step>
+  
+  <Step title="Set client classification">
+    **Tipo Cliente** - Select the client type:
+    - `FFWW` - Freight forwarder/intermediary
+    - `Final` - End customer/direct shipper
+    - `Ambos` - Acts as both
+    
+    **Vendedor** - Assign a sales representative
+    - Select from the dropdown of active users
+    - This determines which Comercial user can create quotations for this client
+    - Admin users can select any representative
+  </Step>
+  
+  <Step title="Add commercial agreement (optional)">
+    Click **Agregar Acuerdo Comercial** to expand the agreement section.
+    
+    See the "Setting Up Commercial Agreements" section below for detailed field explanations.
+    
+    <Info>
+    You can create the client first and add the commercial agreement later by editing the client record.
+    </Info>
+  </Step>
+  
+  <Step title="Set active status">
+    Check the **Activo** checkbox to make this client active.
+    - Active clients appear in quotation forms
+    - Inactive clients are hidden from selection but retain their historical data
+  </Step>
+  
+  <Step title="Save the client">
+    Click **Crear registro**.
+    
+    The client is added to the list and becomes immediately available for quotations.
+  </Step>
+</Steps>
+
+## Editing an Existing Client
+
+<Steps>
+  <Step title="Locate the client">
+    Use filters or search to find the client in the list.
+  </Step>
+  
+  <Step title="Click the edit icon">
+    Click the pencil icon in the Actions column for that client row.
+  </Step>
+  
+  <Step title="Modify fields">
+    The edit dialog opens with all current values pre-filled.
+    
+    Update any fields as needed:
+    - Basic information (name, CUIT, contact details)
+    - Client type and assigned representative
+    - Commercial agreement terms
+  </Step>
+  
+  <Step title="Save changes">
+    Click **Guardar cambios**.
+    
+    Changes take effect immediately across all new quotations. Existing quotations are not modified.
+  </Step>
+</Steps>
+
+<Warning>
+Changing a client's assigned **Vendedor** does not transfer ownership of existing quotations. Historical quotations remain with the original sales representative.
+</Warning>
+
+## Setting Up Commercial Agreements
+
+Commercial agreements define pricing terms, fees, and special conditions for each client. These terms automatically appear in quotations for reference.
+
+### When to Add a Commercial Agreement
+
+Create a commercial agreement when:
+- You've negotiated specific rates with a client
+- The client has custom fee structures
+- You want to standardize pricing for this client's quotations
+- You need to document payment terms and commissions
+
+### Commercial Agreement Fields
+
+**Cliente Final / Cliente FFWW**
+- For FFWW clients: Select the end customer (Final or Both type)
+- For Final clients: Select the freight forwarder (FFWW or Both type)
+- For Both clients: This field is hidden
+- Creates a relationship between intermediaries and end customers
+
+<Note>
+This field uses a searchable combobox. Start typing the company name to filter the list.
+</Note>
+
+**Tarifario** - Rate schedule identifier
+- Internal reference code or name for this pricing structure
+- Example: "PREMIUM-2026", "STANDARD-EUR"
+
+### Deconsolidation Charges
+
+**Desconsolidado W/M** - Weight/Measurement basis
+- Text field for documenting the W/M ratio (e.g., "1 TON = 1 CBM")
+
+**Desco. Min** - Minimum deconsolidation charge
+- Numeric value (USD/EUR/ARS depending on quotation currency)
+
+**Desco. Max** - Maximum deconsolidation charge
+- Caps the charge regardless of cargo size
+
+**Observaciones Desconsolidado** - Deconsolidation notes
+- Free text for special conditions or exceptions
+
+### Fiscal Warehouse Fees
+
+These fees appear in the "Gastos en Depósito Fiscal" section of quotations:
+
+**AGP /Tn** - AGP (Port Authority) per ton
+- Numeric field for per-ton charges
+
+**Manejo Documentos** - Document handling fee
+- Flat or variable fee for processing paperwork
+
+**Log Fee** - Logistics fee
+- Additional service charge
+
+**Doc Fee** - Documentation fee
+- Separate from handling, often regulatory
+
+**Certflete** - Freight certificate fee
+- Charge for issuing freight certificates
+
+**Emisión BL** - Bill of Lading emission fee
+- Cost to generate and issue the BL
+
+### Insurance Terms
+
+**Seguro %** - Insurance percentage
+- Percentage of cargo value (e.g., 0.5 for 0.5%)
+
+**Seguro Min** - Minimum insurance charge
+- Floor value if percentage calculation is too low
+
+### Commercial Terms
+
+**Plazo de Pago** - Payment terms
+- Free text: "30 days", "Net 15", "COD", etc.
+
+**Máximo a Descontar** - Maximum discount allowed
+- Numeric percentage cap on discounts for this client
+
+**Tarifario Fiscal** - Fiscal rate schedule
+- Reference to official or regulatory pricing structure
+
+**Comisión** - Commission rate
+- Percentage or flat fee paid to sales representative
+
+**Incentivo** - Sales incentive
+- Additional bonus or incentive structure
+
+### Notes and Quote Data
+
+**Datos para Cotizar** - Information for quotations
+- Special instructions that should appear on quotations
+- Multi-line text field
+- Example: "Include 10% surcharge for hazmat"
+
+**Observaciones** - Internal observations
+- Notes for internal use only (not shown to clients)
+- Multi-line text field
+
+### Saving Commercial Agreements
+
+Commercial agreement data is saved when you:
+1. Click **Crear registro** for a new client with agreement data filled
+2. Click **Guardar cambios** when editing an existing client
+
+If the agreement already exists, it's updated. If not, a new agreement is created automatically.
+
+To remove a commercial agreement: Click **Remover Acuerdo Comercial** before saving.
+
+## Deactivating a Client
+
+<Steps>
+  <Step title="Edit the client">
+    Click the edit icon for the client you want to deactivate.
+  </Step>
+  
+  <Step title="Uncheck Activo">
+    Uncheck the **Activo** checkbox at the bottom of the form.
+  </Step>
+  
+  <Step title="Save changes">
+    Click **Guardar cambios**.
+  </Step>
+</Steps>
+
+Inactive clients:
+- Do not appear in quotation client selection dropdowns
+- Are hidden from the client list by default
+- Retain all historical data and quotations
+- Can be reactivated at any time
+
+<Tip>
+**Prefer deactivation over deletion.** Keeping inactive clients preserves historical quotations and referential integrity.
+</Tip>
+
+## Deleting a Client
+
+<Warning>
+**Deletion is permanent and cannot be undone.** Consider deactivating instead unless you're certain you want to permanently remove the client.
+</Warning>
+
+<Steps>
+  <Step title="Click the delete icon">
+    In the Actions column, click the trash icon for the client.
+  </Step>
+  
+  <Step title="Confirm deletion">
+    A confirmation dialog appears: "¿Está seguro de que desea eliminar este cliente?"
+    
+    Click **OK** to confirm or **Cancel** to abort.
+  </Step>
+  
+  <Step title="Client is removed">
+    The client and their commercial agreement (if any) are permanently deleted from the system.
+  </Step>
+</Steps>
+
+Important notes about deletion:
+- Existing quotations referencing this client may lose the client name
+- The foreign key `cliente_id` in quotations may become null
+- Deletion is physical (hard delete) with no recovery option
+- Associated commercial agreements are also deleted
+
+## Client Assignment Workflow
+
+For organizations with multiple sales representatives:
+
+### Assigning Clients to Representatives
+
+1. **Initial assignment**: Set the Vendedor when creating the client
+2. **Reassignment**: Edit the client and change the Vendedor field
+3. **Access control**: Comercial users only see their assigned clients
+
+### How Assignment Affects Quotations
+
+When a **Comercial user** logs in:
+- Client dropdown filters to show only their assigned clients
+- They cannot create quotations for other representatives' clients
+- New quotations are automatically assigned to them as the owner
+
+When an **admin user** creates a quotation:
+- All clients are visible regardless of assignment
+- When they select a client with an assigned representative
+- The Comercial field auto-fills with that representative
+- They can override and assign to any representative
+
+## Bulk Client Management
+
+### Importing Clients
+
+Currently, clients must be created one at a time through the UI. For bulk imports:
+1. Contact your system administrator
+2. Provide a CSV or Excel file with client data
+3. Administrator can use direct database import tools
+
+### Exporting Client List
+
+To export the client list:
+1. Apply filters if you only want a subset
+2. Use browser print to PDF (Ctrl+P)
+3. Or copy the table data to Excel using browser selection
+
+<Info>
+A dedicated export feature may be added in future versions. Contact your administrator for custom export scripts if needed.
+</Info>
+
+## Best Practices
+
+<Tip>
+**Use consistent naming**: Enter legal names exactly as they appear on official documents to avoid confusion and invoicing errors.
+</Tip>
+
+<Tip>
+**Complete commercial agreements**: Take time to fill out comprehensive agreements. They save time during quotation and ensure pricing consistency.
+</Tip>
+
+<Tip>
+**Review assignments regularly**: Periodically audit client-to-representative assignments to ensure territories are correctly maintained.
+</Tip>
+
+<Warning>
+**Don't create duplicates**: Search thoroughly before creating a new client. Duplicates cause confusion in reporting and analytics.
+</Warning>
+
+<Card title="Related Guide" icon="arrow-right" href="./creating-quotations">
+  Learn how clients are used in the quotation workflow
+</Card>

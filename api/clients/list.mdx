@@ -1,0 +1,95 @@
+---
+title: "List Clients"
+api: "GET /api/clientes"
+description: "Retrieve all clients with assigned salesperson information"
+---
+
+Lists all clients in the system with their associated salesperson details.
+
+## Authentication
+
+Requires an active session. Available to all authenticated roles.
+
+## Response
+
+Returns an array of client objects with joined user information.
+
+<ResponseField name="id" type="integer">
+  Unique client identifier
+</ResponseField>
+
+<ResponseField name="legal_name" type="string">
+  Client's legal business name (razón social)
+</ResponseField>
+
+<ResponseField name="tax_id" type="string | null">
+  Tax identification number (CUIT/CUIL) for invoicing
+</ResponseField>
+
+<ResponseField name="phone" type="string | null">
+  Contact phone number
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  Contact email address
+</ResponseField>
+
+<ResponseField name="client_type" type="enum">
+  Type of client business
+  
+  **Possible values:** `"FFWW"`, `"Final"`, `"Both"`
+</ResponseField>
+
+<ResponseField name="user_id" type="integer | null">
+  ID of the assigned salesperson (references users table)
+</ResponseField>
+
+<ResponseField name="user_name" type="string | null">
+  Full name of the assigned salesperson
+</ResponseField>
+
+<ResponseField name="is_active" type="boolean">
+  Whether the client is currently active
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://your-domain.com/api/clientes \
+  -H "Cookie: session=your-session-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": 1,
+    "legal_name": "Empresa SA",
+    "tax_id": "20-12345678-9",
+    "phone": "+54 11 1234-5678",
+    "email": "contacto@empresa.com",
+    "client_type": "FFWW",
+    "user_id": 3,
+    "user_name": "Juan Pérez",
+    "is_active": true
+  },
+  {
+    "id": 2,
+    "legal_name": "Cliente Final SRL",
+    "tax_id": "20-98765432-1",
+    "phone": "+54 11 9876-5432",
+    "email": "info@clientefinal.com",
+    "client_type": "Final",
+    "user_id": 5,
+    "user_name": "María González",
+    "is_active": true
+  }
+]
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+</ResponseExample>

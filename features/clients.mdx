@@ -1,0 +1,217 @@
+---
+title: Client Management
+description: Manage FFWW freight forwarders, end clients, and their commercial relationships
+---
+
+## Overview
+
+ICL Cotizaciones manages two types of clients with distinct roles in the quotation workflow. The client management system tracks contact details, assigns sales representatives, and links clients to commercial agreements.
+
+## Client Types
+
+<CardGroup cols={3}>
+  <Card title="FFWW" icon="building">
+    **Freight Forwarders** who request quotes and manage logistics. These are your direct clients who receive quotations.
+  </Card>
+  
+  <Card title="Final" icon="users">
+    **End Customers** who are the ultimate recipients or shippers of cargo. Referenced in quotations as the final client.
+  </Card>
+  
+  <Card title="Both" icon="arrows-left-right">
+    Clients that operate as both FFWW and end customer. Can be selected in either role during quotation creation.
+  </Card>
+</CardGroup>
+
+## Creating a Client
+
+<Steps>
+  <Step title="Access client management">
+    Navigate to **Maestros → Clientes** (admin only) or click **Crear cliente** from the quotation form.
+  </Step>
+  
+  <Step title="Enter client details">
+    **Tab: Datos del Cliente**
+    
+    - **Razon Social** (Legal name): Official business name (required)
+    - **CUIT/RUT** (Tax ID): Tax identification number
+    - **Telefono**: Contact phone number
+    - **Email**: Primary email address
+    - **Tipo de Cliente**: Select FFWW, Final, or Both (required)
+    - **Comercial**: Assigned sales representative
+    - **Activo**: Enable/disable client (default: active)
+  </Step>
+  
+  <Step title="Configure commercial agreement (optional)">
+    **Tab: Acuerdo Comercial**
+    
+    Set up pricing terms and fees specific to this client relationship. See [Commercial Agreements](/features/commercial-agreements) for details.
+  </Step>
+  
+  <Step title="Save client">
+    Click **Guardar** to create the client record. If created from quotation form with `returnTo=cotizacion` parameter, you'll be redirected back to the quotation with form data preserved.
+  </Step>
+</Steps>
+
+## Client Type Workflow
+
+### FFWW Clients in Quotations
+
+When creating a quotation:
+
+1. **Cliente FFWW** field shows only clients with `client_type = "FFWW"` or `"Both"`
+2. Selecting a FFWW client automatically loads their commercial agreement (if configured)
+3. For admin users, if the client has an assigned `user_id`, it auto-fills the **Comercial** field
+4. Non-admin users only see clients assigned to them (`user_id` matches session user)
+
+### Final Clients in Quotations
+
+- **Cliente Final** field shows only clients with `client_type = "Final"` or `"Both"`
+- This is an optional reference field
+- Also accepts free-text input for ad-hoc end customer names
+- Used for tracking ultimate consignee/shipper
+
+## Sales Representative Assignment
+
+<CardGroup cols={2}>
+  <Card title="Admin Assignment" icon="user-shield">
+    Admin users can assign any sales representative to a client via the **Comercial** dropdown.
+    
+    This determines:
+    - Which non-admin user can view/edit the client's quotations
+    - Default sales rep when admin creates quotes for this client
+  </Card>
+  
+  <Card title="Non-Admin Access" icon="user">
+    Commercial users (non-admin) only see clients where `user_id` matches their user account.
+    
+    They cannot reassign clients to other sales reps.
+  </Card>
+</CardGroup>
+
+## Client List View
+
+The client management page displays:
+
+- **Razon Social**: Legal business name
+- **CUIT/RUT**: Tax identification
+- **Tipo**: Client type badge (FFWW, Final, Both)
+- **Comercial**: Assigned sales representative name
+- **Contacto**: Phone and email
+- **Estado**: Active/Inactive status
+
+### Actions
+
+- **Edit**: Click pencil icon to modify client details and agreement
+- **Delete**: Remove client (admin only, requires confirmation)
+- **Search**: Filter clients by name or tax ID
+- **Filter by Type**: Show only FFWW, Final, or Both clients
+- **Filter by Comercial**: Show clients assigned to specific sales rep
+
+## Access Control
+
+| Operation | Admin | Commercial User |
+|-----------|-------|----------------|
+| View all clients | ✓ | Only assigned clients |
+| Create client | ✓ | ✗ (403) |
+| Edit any client | ✓ | ✗ (403) |
+| Delete client | ✓ | ✗ (403) |
+| Assign sales rep | ✓ | ✗ |
+| View in quotations | All clients | Only `user_id` match |
+
+<Note>
+Roles with admin privileges: **DIRECTOR**, **GERENTE**, **ADMINISTRACION**
+
+Other roles: **COMERCIAL**, **CSV**, **OPERACIONES**
+</Note>
+
+## Client Creation from Quotation Form
+
+When creating a quotation, if the needed client doesn't exist:
+
+<Steps>
+  <Step title="Click 'Crear cliente'">
+    In the Cliente FFWW or Cliente Final combobox, click the **Crear cliente** button at the bottom of the dropdown.
+  </Step>
+  
+  <Step title="Form data preserved">
+    Current quotation form data is saved to `sessionStorage` as `cotizacion_en_curso`.
+    
+    User is redirected to `/maestros/clientes?nuevo=true&returnTo=cotizacion`.
+  </Step>
+  
+  <Step title="Create client">
+    Client creation dialog opens automatically. Fill in client details and save.
+  </Step>
+  
+  <Step title="Return to quotation">
+    After saving, you're redirected back to `/cotizaciones/nueva` with the quotation form restored from `sessionStorage`.
+    
+    The new client is now available in the dropdown.
+  </Step>
+</Steps>
+
+Source: src/components/cotizaciones/cotizacion-form.tsx:486-489
+
+## Client-Agreement Relationship
+
+Clients can have **one commercial agreement** that defines:
+
+- Fiscal deposit fee structure
+- Deconsolidation rates
+- Insurance terms
+- Payment conditions
+- Commission and incentive rates
+
+When a client is selected in a quotation, their agreement data auto-loads in the "Gastos en Deposito Fiscal" section.
+
+If no agreement exists, the section displays: _"Sin acuerdo comercial para este cliente"_
+
+## Data Model Reference
+
+From `clients` table (src/db/schema.ts:15-26):
+
+```typescript
+clients {
+  id: integer (PK)
+  legal_name: text (required)
+  tax_id: text
+  phone: text
+  email: text
+  client_type: "FFWW" | "Final" | "Both" (required, default: "FFWW")
+  user_id: integer (FK → users) // Assigned sales rep
+  is_active: boolean (default: true)
+  created_at: text
+  updated_at: text
+}
+```
+
+## API Endpoints
+
+- `GET /api/clientes` - List clients (filtered by user_id for non-admin)
+- `POST /api/clientes` - Create new client (admin only)
+- `GET /api/clientes/[id]` - Get client details
+- `PUT /api/clientes/[id]` - Update client (admin only)
+- `DELETE /api/clientes/[id]` - Delete client (admin only)
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Client Naming" icon="tag">
+    Use official legal names in **Razon Social** for consistency with invoicing and documentation.
+  </Card>
+  
+  <Card title="Type Selection" icon="route">
+    - Set to **FFWW** for direct freight forwarder clients
+    - Set to **Final** for end customers who are only referenced
+    - Set to **Both** for clients who operate in dual capacity
+  </Card>
+  
+  <Card title="Sales Assignment" icon="user-plus">
+    Assign clients to sales reps to ensure proper access control and quotation ownership tracking.
+  </Card>
+  
+  <Card title="Deactivation" icon="toggle-off">
+    Instead of deleting clients with historical quotations, set **Activo** to false to hide from active lists while preserving data.
+  </Card>
+</CardGroup>

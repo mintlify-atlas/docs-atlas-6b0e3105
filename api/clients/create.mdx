@@ -1,0 +1,134 @@
+---
+title: "Create Client"
+api: "POST /api/clientes"
+description: "Create a new client record"
+---
+
+Creates a new client in the system.
+
+## Authentication
+
+<Warning>
+  **Admin only** - This endpoint requires administrator privileges (DIRECTOR or GERENTE role).
+</Warning>
+
+Requires an active session with admin role. Non-admin users will receive a 403 error.
+
+## Request Body
+
+<ParamField body="legal_name" type="string" required>
+  Client's legal business name (razón social)
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Tax identification number (CUIT/CUIL) for invoicing purposes
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Contact phone number
+</ParamField>
+
+<ParamField body="email" type="string">
+  Contact email address
+</ParamField>
+
+<ParamField body="client_type" type="enum" default="FFWW">
+  Type of client business
+  
+  **Possible values:**
+  - `"FFWW"` - Freight forwarder
+  - `"Final"` - Final client
+  - `"Both"` - Both types
+</ParamField>
+
+<ParamField body="user_id" type="integer">
+  ID of the salesperson to assign to this client (must reference a valid user)
+</ParamField>
+
+<ParamField body="is_active" type="boolean" default={true}>
+  Whether the client should be active upon creation
+</ParamField>
+
+## Response
+
+Returns the newly created client object with all fields including auto-generated timestamps.
+
+<ResponseField name="id" type="integer">
+  Unique client identifier (auto-generated)
+</ResponseField>
+
+<ResponseField name="legal_name" type="string">
+  Client's legal business name
+</ResponseField>
+
+<ResponseField name="tax_id" type="string | null">
+  Tax identification number
+</ResponseField>
+
+<ResponseField name="phone" type="string | null">
+  Contact phone number
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  Contact email address
+</ResponseField>
+
+<ResponseField name="client_type" type="enum">
+  Type of client business (`"FFWW"`, `"Final"`, or `"Both"`)
+</ResponseField>
+
+<ResponseField name="user_id" type="integer | null">
+  ID of the assigned salesperson
+</ResponseField>
+
+<ResponseField name="is_active" type="boolean">
+  Whether the client is active
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://your-domain.com/api/clientes \
+  -H "Content-Type: application/json" \
+  -H "Cookie: session=your-session-token" \
+  -d '{
+    "legal_name": "Nueva Empresa SA",
+    "tax_id": "20-11223344-5",
+    "phone": "+54 11 2233-4455",
+    "email": "contacto@nuevaempresa.com",
+    "client_type": "FFWW",
+    "user_id": 3,
+    "is_active": true
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": 15,
+  "legal_name": "Nueva Empresa SA",
+  "tax_id": "20-11223344-5",
+  "phone": "+54 11 2233-4455",
+  "email": "contacto@nuevaempresa.com",
+  "client_type": "FFWW",
+  "user_id": 3,
+  "is_active": true,
+  "created_at": "2026-03-04T10:30:00.000Z",
+  "updated_at": "2026-03-04T10:30:00.000Z"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "No autorizado"
+}
+```
+</ResponseExample>

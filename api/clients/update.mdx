@@ -1,0 +1,142 @@
+---
+title: "Update Client"
+api: "PUT /api/clientes/:id"
+description: "Update an existing client's information"
+---
+
+Updates an existing client record in the system.
+
+## Authentication
+
+<Warning>
+  **Admin only** - This endpoint requires administrator privileges (DIRECTOR or GERENTE role).
+</Warning>
+
+Requires an active session with admin role. Non-admin users will receive a 403 error.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the client to update
+</ParamField>
+
+## Request Body
+
+All fields are technically optional in the request. The server will update the fields provided.
+
+<ParamField body="legal_name" type="string">
+  Client's legal business name (razón social)
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Tax identification number (CUIT/CUIL) for invoicing purposes
+</ParamField>
+
+<ParamField body="phone" type="string">
+  Contact phone number
+</ParamField>
+
+<ParamField body="email" type="string">
+  Contact email address
+</ParamField>
+
+<ParamField body="client_type" type="enum" default="FFWW">
+  Type of client business
+  
+  **Possible values:**
+  - `"FFWW"` - Freight forwarder
+  - `"Final"` - Final client
+  - `"Both"` - Both types
+</ParamField>
+
+<ParamField body="user_id" type="integer">
+  ID of the salesperson to assign to this client (must reference a valid user)
+</ParamField>
+
+<ParamField body="is_active" type="boolean">
+  Whether the client is currently active
+</ParamField>
+
+## Response
+
+Returns the updated client object with all fields including the refreshed `updated_at` timestamp.
+
+<ResponseField name="id" type="integer">
+  Unique client identifier
+</ResponseField>
+
+<ResponseField name="legal_name" type="string">
+  Client's legal business name
+</ResponseField>
+
+<ResponseField name="tax_id" type="string | null">
+  Tax identification number
+</ResponseField>
+
+<ResponseField name="phone" type="string | null">
+  Contact phone number
+</ResponseField>
+
+<ResponseField name="email" type="string | null">
+  Contact email address
+</ResponseField>
+
+<ResponseField name="client_type" type="enum">
+  Type of client business (`"FFWW"`, `"Final"`, or `"Both"`)
+</ResponseField>
+
+<ResponseField name="user_id" type="integer | null">
+  ID of the assigned salesperson
+</ResponseField>
+
+<ResponseField name="is_active" type="boolean">
+  Whether the client is active
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp of last update (automatically set to current time)
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://your-domain.com/api/clientes/15 \
+  -H "Content-Type: application/json" \
+  -H "Cookie: session=your-session-token" \
+  -d '{
+    "legal_name": "Nueva Empresa SA",
+    "tax_id": "20-11223344-5",
+    "phone": "+54 11 2233-4466",
+    "email": "nuevo@nuevaempresa.com",
+    "client_type": "Both",
+    "user_id": 5,
+    "is_active": true
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": 15,
+  "legal_name": "Nueva Empresa SA",
+  "tax_id": "20-11223344-5",
+  "phone": "+54 11 2233-4466",
+  "email": "nuevo@nuevaempresa.com",
+  "client_type": "Both",
+  "user_id": 5,
+  "is_active": true,
+  "created_at": "2026-03-04T10:30:00.000Z",
+  "updated_at": "2026-03-04T15:45:30.000Z"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "No autorizado"
+}
+```
+</ResponseExample>

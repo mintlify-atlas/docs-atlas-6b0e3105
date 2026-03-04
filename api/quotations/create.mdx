@@ -1,0 +1,315 @@
+---
+title: Create Quotation
+api: POST /api/cotizaciones
+---
+
+Creates a new quotation with auto-generated quotation number.
+
+## Authorization
+
+Requires active session. For non-admin users, `vendedor_id` is automatically set to `session.userId` (request body value is ignored).
+
+## Request Body
+
+<ParamField body="fecha" type="string" format="YYYY-MM-DD" default="current date">
+  Quotation date
+</ParamField>
+
+<ParamField body="hora" type="string" format="HH:mm" default="current time">
+  Quotation time
+</ParamField>
+
+<ParamField body="impo_expo" type="string" default="IMPO">
+  Import/Export. Values: `IMPO`, `EXPO`
+</ParamField>
+
+<ParamField body="tipo" type="string">
+  Quotation type (optional)
+</ParamField>
+
+<ParamField body="fcl_lcl" type="string" default="LCL">
+  Load type. Values: `FCL`, `LCL`
+</ParamField>
+
+<ParamField body="cond_venta" type="string">
+  Sale condition (optional)
+</ParamField>
+
+<ParamField body="cliente_id" type="number" required>
+  Client ID (must exist in clients table)
+</ParamField>
+
+<ParamField body="origen_id" type="number">
+  Origin location ID (optional)
+</ParamField>
+
+<ParamField body="via_id" type="number">
+  Via/route location ID (optional)
+</ParamField>
+
+<ParamField body="cliente_final" type="string">
+  End client name (optional)
+</ParamField>
+
+<ParamField body="kgs" type="number">
+  Weight in kilograms
+</ParamField>
+
+<ParamField body="cbm_facturables" type="number">
+  Billable cubic meters
+</ParamField>
+
+<ParamField body="cbm_reales" type="number">
+  Actual cubic meters
+</ParamField>
+
+<ParamField body="detalle" type="string">
+  Cargo description
+</ParamField>
+
+<ParamField body="imo" type="string">
+  IMO classification (for hazardous materials)
+</ParamField>
+
+<ParamField body="apilable" type="string">
+  Stackable. Values: `SI`, `NO`
+</ParamField>
+
+<ParamField body="pickup_address" type="string">
+  Pickup address (optional)
+</ParamField>
+
+<ParamField body="moneda" type="string" default="USD">
+  Currency. Values: `USD`, `EUR`, `ARS`
+</ParamField>
+
+<ParamField body="gastos_origen_neto" type="number">
+  Origin costs (net)
+</ParamField>
+
+<ParamField body="gastos_origen_venta" type="number">
+  Origin costs (sale price)
+</ParamField>
+
+<ParamField body="flete_neto" type="number">
+  Freight cost (net)
+</ParamField>
+
+<ParamField body="flete_venta" type="number">
+  Freight cost (sale price)
+</ParamField>
+
+<ParamField body="tipo_fn" type="string">
+  Freight net type (optional)
+</ParamField>
+
+<ParamField body="tipo_fv" type="string">
+  Freight sale type (optional)
+</ParamField>
+
+<ParamField body="cerrada" type="string" default="ENCOTIZACION">
+  Status. Values: `ENCOTIZACION`, `SI`, `NO`, `PEND`, `PEND A/C`
+</ParamField>
+
+<ParamField body="fecha_cierre" type="string" format="YYYY-MM-DD">
+  Close date (only set when status is `SI`, `NO`, or `PEND A/C`)
+</ParamField>
+
+<ParamField body="orden_venta" type="string">
+  Sales order reference (optional)
+</ParamField>
+
+<ParamField body="observaciones" type="string">
+  Notes (optional)
+</ParamField>
+
+<ParamField body="referencia" type="string">
+  Reference (optional)
+</ParamField>
+
+<ParamField body="validez_tarifa" type="string">
+  Rate validity (optional)
+</ParamField>
+
+<ParamField body="vendedor_id" type="number">
+  Seller/user ID
+  
+  **Admin only:** Admins can assign quotations to other users. Non-admin users will have this automatically set to their own user ID.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  The created quotation object with all computed fields
+  
+  <Expandable title="Properties">
+    <ResponseField name="id" type="number">
+      Auto-generated quotation ID
+    </ResponseField>
+    
+    <ResponseField name="quote_number" type="string">
+      Auto-generated quotation number in format `COT-YYMM-NNNN`
+      
+      Where:
+      - `YY` = 2-digit year
+      - `MM` = 2-digit month
+      - `NNNN` = 4-digit sequential number (zero-padded)
+      
+      Example: `COT-2602-0001`
+    </ResponseField>
+    
+    <ResponseField name="profit" type="number">
+      Calculated profit: `(flete_venta - flete_neto) + (gastos_origen_venta - gastos_origen_neto)`
+      
+      Rounded to 2 decimal places
+    </ResponseField>
+    
+    <ResponseField name="week" type="number">
+      Week number computed from `fecha`
+    </ResponseField>
+    
+    <ResponseField name="month" type="number">
+      Month (1-12) computed from `fecha`
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Year computed from `fecha`
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      Creation timestamp (ISO 8601)
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Last update timestamp (ISO 8601)
+    </ResponseField>
+  </Expandable>
+  
+  All other fields from the request body are also returned.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST 'https://your-domain.com/api/cotizaciones' \
+  -H 'Content-Type: application/json' \
+  -H 'Cookie: session=your-session-token' \
+  -d '{
+    "fecha": "2026-02-10",
+    "hora": "14:30",
+    "impo_expo": "IMPO",
+    "fcl_lcl": "LCL",
+    "cliente_id": 3,
+    "origen_id": 2,
+    "via_id": 1,
+    "kgs": 500,
+    "cbm_facturables": 2.5,
+    "cbm_reales": 2.3,
+    "detalle": "Electronics components",
+    "apilable": "SI",
+    "moneda": "USD",
+    "gastos_origen_neto": 100,
+    "gastos_origen_venta": 150,
+    "flete_neto": 500,
+    "flete_venta": 650,
+    "cerrada": "ENCOTIZACION"
+  }'
+```
+
+```bash Minimal request
+curl -X POST 'https://your-domain.com/api/cotizaciones' \
+  -H 'Content-Type: application/json' \
+  -H 'Cookie: session=your-session-token' \
+  -d '{
+    "cliente_id": 3,
+    "flete_neto": 500,
+    "flete_venta": 650
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201 Created
+{
+  "id": 15,
+  "quote_number": "COT-2602-0015",
+  "date": "2026-02-10",
+  "time": "14:30",
+  "impo_expo": "IMPO",
+  "tipo": null,
+  "load_type": "LCL",
+  "sale_condition": null,
+  "client_id": 3,
+  "origin_id": 2,
+  "via_id": 1,
+  "end_client": null,
+  "kgs": 500,
+  "billable_cbm": 2.5,
+  "actual_cbm": 2.3,
+  "description": "Electronics components",
+  "imo": null,
+  "stackable": "SI",
+  "pickup_address": null,
+  "currency": "USD",
+  "origin_costs_net": 100,
+  "origin_costs_sale": 150,
+  "freight_net": 500,
+  "freight_sale": 650,
+  "freight_net_type": null,
+  "freight_sale_type": null,
+  "status": "ENCOTIZACION",
+  "close_date": null,
+  "sales_order": null,
+  "notes": null,
+  "reference": null,
+  "rate_validity": null,
+  "profit": 200,
+  "month": 2,
+  "year": 2026,
+  "week": 7,
+  "user_id": 5,
+  "created_at": "2026-02-10T14:30:00.000Z",
+  "updated_at": "2026-02-10T14:30:00.000Z"
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+</ResponseExample>
+
+## Server Logic
+
+### Auto-generated Fields
+
+1. **quote_number**: Automatically generated in format `COT-YYMM-NNNN`
+   - Query counts existing quotations in current month
+   - Increments sequence number
+   - Zero-pads to 4 digits
+
+2. **profit**: Calculated as `(flete_venta - flete_neto) + (gastos_origen_venta - gastos_origen_neto)`
+   - Rounded to 2 decimal places
+
+3. **week, month, year**: Computed from `fecha` field
+
+4. **user_id**: 
+   - For admin users: Uses `vendedor_id` from request body, or falls back to `session.userId`
+   - For non-admin users: Always set to `session.userId` (ignores request body)
+
+5. **close_date**: Only saved when `cerrada` is `SI`, `NO`, or `PEND A/C`. Otherwise set to `null`.
+
+### Default Values
+
+- `fecha`: Current date if not provided
+- `hora`: Current time if not provided
+- `impo_expo`: `"IMPO"`
+- `fcl_lcl`: `"LCL"`
+- `moneda`: `"USD"`
+- `cerrada`: `"ENCOTIZACION"`
+
+## Notes
+
+- The quotation number is sequential per month and resets each month
+- Non-admin users cannot assign quotations to other users
+- Profit is automatically calculated from cost and sale prices

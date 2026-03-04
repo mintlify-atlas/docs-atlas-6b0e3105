@@ -1,0 +1,41 @@
+---
+title: 'Delete User'
+api: 'DELETE /api/usuarios/:id'
+---
+
+Deletes a user account. This endpoint requires admin permissions.
+
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can delete users. This action is permanent and cannot be undone.
+</Warning>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the user to delete
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.iclcotizaciones.com/api/usuarios/8 \
+  -H "Cookie: session=your_session_token"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "ok": true
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+</ResponseExample>

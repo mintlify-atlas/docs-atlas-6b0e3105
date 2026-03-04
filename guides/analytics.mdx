@@ -1,0 +1,486 @@
+---
+title: Analytics and Dashboards
+description: Using dashboards and reports to track quotation performance and sales metrics
+---
+
+ICL Cotizaciones provides comprehensive analytics dashboards to help you track quotation performance, sales activity, and business trends. This guide covers all available reports and how to use them effectively.
+
+## Dashboard Access by Role
+
+Dashboard access depends on your user role:
+
+**Administrative Roles** (Director, Gerente, Administración)
+- Access all dashboard views
+- See company-wide metrics
+- View performance by sales representative
+- Access filtered reports across all users
+
+**Operational Roles** (Comercial, Operaciones, CSV)
+- Access personal performance dashboards only
+- See their own quotations and metrics
+- Cannot view other representatives' data
+- Cannot access by-representative comparison views
+
+<Info>
+The system automatically filters data based on your role. You'll only see the "Por Vendedor" (By Sales Rep) option in the dashboard menu if you have administrative access.
+</Info>
+
+## Available Dashboards
+
+Navigate to dashboards from the sidebar under the **Dashboard** section:
+
+- **General** - Company-wide metrics and trends
+- **Por Vendedor** - Performance by sales representative (admin only)
+- **Por Cliente** - Client activity analysis (admin only)
+- **Filtradas** - Custom filtered reports
+- **Contactos** - Client engagement tracking (admin only)
+
+## General Dashboard
+
+The General dashboard provides a high-level view of quotation activity and conversion rates.
+
+### Accessing General Dashboard
+
+Sidebar → **Dashboard** → **General**
+
+### Metrics Displayed
+
+**Cotizaciones por Semana** (Quotations by Week)
+- Bar chart showing total and closed (won) quotations by week number
+- Covers recent weeks with complete data
+- Blue bars: Total quotations created
+- Green bars: Quotations with status "SI" (won)
+- X-axis: Week numbers (S01, S02, etc.)
+- Y-axis: Quotation count
+
+<Note>
+Weeks are derived from the quotation date field. Week 1 starts on the first day of the year. Some imported historical data may show as "null" week if not properly calculated.
+</Note>
+
+**Cotizaciones por Mes** (Quotations by Month)
+- Bar chart showing monthly quotation volume and conversions
+- Format: "MMM YYYY" (e.g., "Feb 2026")
+- Blue bars: Total quotations
+- Green bars: Closed/won quotations
+- Useful for identifying seasonal trends
+
+**Top 10 Clientes (30 días)** (Top 10 Clients - Last 30 Days)
+- Horizontal bar chart ranking clients by total quotation volume
+- Includes all quotation statuses
+- Client name on Y-axis
+- Quotation count on X-axis
+- Filters to last 30 days automatically
+- Shows top 10 most active clients
+
+**Top 10 Clientes Ganadas (30 días)** (Top 10 Clients Won - Last 30 Days)
+- Horizontal bar chart showing clients with most won quotations
+- Only counts quotations with status "SI"
+- Green bars indicate successful conversions
+- Helps identify your most valuable clients
+- Filters to last 30 days automatically
+
+### Data Filtering
+
+**Admin users**: See all quotations across the entire company
+
+**Comercial/Operaciones users**: See only their own quotations
+
+The dashboard automatically applies the appropriate filter based on your role.
+
+### Interpreting the Data
+
+<Tip>
+**Compare total vs. closed**: A large gap between blue (total) and green (closed) bars indicates low conversion rates for that period.
+</Tip>
+
+<Tip>
+**Track trends**: Look for patterns across weeks and months. Are you creating more quotations? Is your close rate improving?
+</Tip>
+
+<Tip>
+**Identify top clients**: Use the Top 10 charts to focus retention efforts on your most active and valuable clients.
+</Tip>
+
+## Por Vendedor Dashboard
+
+<Info>
+**Admin only** - This dashboard is only accessible to Director, Gerente, and Administración roles.
+</Info>
+
+The Por Vendedor (By Sales Representative) dashboard compares performance across your sales team.
+
+### Accessing Por Vendedor Dashboard
+
+Sidebar → **Dashboard** → **Por Vendedor**
+
+### Metrics Displayed
+
+**Performance by Sales Representative**
+- Table or chart showing each representative's metrics:
+  - Total quotations created
+  - Number of closed/won quotations
+  - Total profit generated
+  - Conversion rate (calculated client-side)
+- Sortable by any column
+- Covers all time periods in the database
+
+**Monthly Breakdown by Representative**
+- Shows quotation volume per representative per month
+- Helps identify productivity trends
+- Can spot representatives who need support or coaching
+
+### Use Cases
+
+**Sales Management**
+- Compare team performance
+- Identify top performers
+- Spot representatives who need training or support
+- Allocate territories based on capacity
+
+**Forecasting**
+- Track monthly quotation trends by representative
+- Predict pipeline based on historical patterns
+- Plan resource allocation
+
+**Compensation Planning**
+- Review profit contribution by representative
+- Support commission calculations
+- Evaluate performance for bonuses
+
+## Por Cliente Dashboard
+
+<Info>
+**Admin only** - This dashboard is only accessible to Director, Gerente, and Administración roles.
+</Info>
+
+The Por Cliente (By Client) dashboard analyzes quotation activity at the client level.
+
+### Accessing Por Cliente Dashboard
+
+Sidebar → **Dashboard** → **Por Cliente**
+
+### Metrics Displayed
+
+**Client Activity Summary**
+- List of all clients with quotation metrics
+- Total quotations per client
+- Conversion rate per client
+- Last quotation date
+- Assigned sales representative
+
+**Client Conversion Analysis**
+- Shows which clients have high/low win rates
+- Helps identify clients worth pursuing
+- Flags clients with lots of quotes but no wins (may need different approach)
+
+### Use Cases
+
+**Account Management**
+- Identify high-value clients deserving extra attention
+- Spot dormant clients for re-engagement campaigns
+- Review client profitability
+
+**Sales Strategy**
+- Focus efforts on high-conversion clients
+- Review low-conversion clients to understand why
+- Identify upsell opportunities
+
+## Filtradas Dashboard
+
+The Filtradas (Filtered) dashboard lets you create custom reports with multiple filter criteria.
+
+### Accessing Filtradas Dashboard
+
+Sidebar → **Dashboard** → **Filtradas**
+
+### Available Filters
+
+**Fecha Desde / Fecha Hasta** (Date Range)
+- Select start and end dates
+- Filters by quotation creation date
+- Leave blank for all dates
+
+**Cliente** (Client)
+- Multi-select dropdown
+- Filter to specific clients
+- Useful for account reviews
+
+**Estado** (Status)
+- Multi-select dropdown for quotation status:
+  - `SI` - Won/Closed successfully
+  - `NO` - Lost/Not successful
+  - `PEND` - Pending client response
+  - `ENCOTIZACION` - In quotation (draft)
+  - `PEND A/C` - Pending approval
+
+**Vendedor** (Sales Representative) - Admin only
+- Multi-select dropdown
+- Filter to specific representatives
+- Not visible to Comercial/Operaciones users
+
+**Via** (Destination)
+- Single-select dropdown
+- Filter by destination port/city
+- Useful for analyzing specific trade lanes
+
+### Applying Filters
+
+<Steps>
+  <Step title="Select filter criteria">
+    Choose values in one or more filter fields.
+  </Step>
+  
+  <Step title="Click Aplicar or Buscar">
+    The dashboard updates with filtered results.
+  </Step>
+  
+  <Step title="Review the summary">
+    The top of the page shows:
+    - Total quotations matching filters
+    - Total closed (won) quotations
+    - Total profit from filtered quotations
+    - Breakdown by status
+  </Step>
+  
+  <Step title="Review the detail list">
+    Below the summary, see the full list of quotations matching your filters with:
+    - Quote number
+    - Client name
+    - Status
+    - Profit
+    - Date
+    - Sales representative
+  </Step>
+  
+  <Step title="Adjust filters as needed">
+    Change filter values and reapply to refine your analysis.
+  </Step>
+</Steps>
+
+### Use Cases
+
+**Period Reviews**
+```
+Fecha Desde: 2026-01-01
+Fecha Hasta: 2026-01-31
+Estado: SI
+→ Shows all won quotations in January
+```
+
+**Client Performance**
+```
+Cliente: ACME Corporation
+Fecha Desde: 2025-01-01
+→ All quotations for ACME this year
+```
+
+**Trade Lane Analysis**
+```
+Via: Shanghai
+Estado: SI, NO
+→ All closed quotations (won + lost) for Shanghai route
+```
+
+**Representative Review**
+```
+Vendedor: María López
+Fecha Desde: 2026-02-01
+Fecha Hasta: 2026-02-29
+→ María's February performance
+```
+
+### Exporting Filtered Data
+
+Currently, there's no built-in export feature. To export filtered data:
+
+1. Apply your filters
+2. Select the quotation list table
+3. Copy (Ctrl+C) and paste into Excel
+4. Or use browser Print to PDF (Ctrl+P)
+
+## Contactos Dashboard
+
+<Info>
+**Admin only** - This dashboard is only accessible to Director, Gerente, and Administración roles.
+</Info>
+
+The Contactos (Contacts/Engagement) dashboard helps you track client engagement and identify inactive accounts.
+
+### Accessing Contactos Dashboard
+
+Sidebar → **Dashboard** → **Contactos**
+
+### Metrics Displayed
+
+**Actividad por Vendedor (últimos 30 días)** (Activity by Sales Rep - Last 30 Days)
+- Table showing each representative's recent activity:
+  - Total quotations created
+  - Number of unique clients quoted
+  - Client engagement rate
+- Helps identify representatives with high/low activity
+- Automatic 30-day rolling window
+
+**Clientes Sin Cotizar** (Clients Without Recent Quotations)
+- List of active clients with no quotations in the last 30 days
+- Includes:
+  - Client name
+  - Assigned sales representative
+  - Last quotation date (if any)
+- Helps identify dormant accounts needing attention
+
+### Use Cases
+
+**Sales Activity Monitoring**
+- Track team engagement levels
+- Identify representatives not actively quoting
+- Ensure consistent client contact
+
+**Client Retention**
+- Find clients who haven't been quoted recently
+- Create re-engagement campaigns
+- Prevent client churn
+
+**Territory Management**
+- Review client distribution across representatives
+- Identify overloaded or underutilized representatives
+- Reassign clients for better coverage
+
+## Understanding Profit Calculations
+
+Profit is automatically calculated for each quotation and aggregated in dashboards:
+
+```
+Profit = (Flete Venta - Flete Neto) + (Gastos Origen Venta - Gastos Origen Neto)
+```
+
+**Components:**
+- **Flete Venta** - Sales price for freight
+- **Flete Neto** - Net cost of freight
+- **Gastos Origen Venta** - Sales price for origin costs
+- **Gastos Origen Neto** - Net origin costs
+
+If any component is null or zero, it's treated as zero in the calculation.
+
+<Note>
+Profit is calculated at quotation creation and update time. Changing pricing tables doesn't retroactively update profit on existing quotations.
+</Note>
+
+## Dashboard Best Practices
+
+### For Sales Representatives (Comercial/Operaciones)
+
+<Tip>
+**Check your dashboard weekly**: Review your personal metrics every Monday to set priorities for the week.
+</Tip>
+
+<Tip>
+**Track conversion rates**: If your close rate is low, review lost quotations to understand why and adjust your approach.
+</Tip>
+
+<Tip>
+**Focus on top clients**: Use the Top 10 Clientes chart to identify which relationships to prioritize.
+</Tip>
+
+### For Managers (Director/Gerente/Administración)
+
+<Tip>
+**Weekly team reviews**: Use the Por Vendedor dashboard in Monday meetings to discuss team performance.
+</Tip>
+
+<Tip>
+**Monthly client audits**: Review the Contactos dashboard to identify dormant clients and assign follow-up tasks.
+</Tip>
+
+<Tip>
+**Spot trends early**: Monitor weekly charts for sudden drops in quotation volume or conversion rates.
+</Tip>
+
+<Tip>
+**Combine filters**: Use the Filtradas dashboard to create detailed reports for specific scenarios (e.g., "All lost quotes over $10k profit in Q1").
+</Tip>
+
+### Data Hygiene
+
+<Warning>
+**Update quotation status**: Dashboards are only as good as your data. Make sure representatives consistently update the "Cerrada" status field.
+</Warning>
+
+<Warning>
+**Set close dates**: When marking a quotation as SI or NO, ensure the Fecha de Cierre is accurate for proper period reporting.
+</Warning>
+
+<Tip>
+**Review data quality**: Periodically spot-check quotations to ensure profit calculations, dates, and status values are correct.
+</Tip>
+
+## Troubleshooting Dashboard Issues
+
+### Dashboard Shows "Cargando..." (Loading) Forever
+
+**Possible causes:**
+- Network connectivity issue
+- Database query timeout (very large dataset)
+- Session expired
+
+**Solutions:**
+1. Refresh the browser (F5)
+2. Check your internet connection
+3. Log out and log back in
+4. Clear browser cache and retry
+5. Contact your system administrator if the issue persists
+
+### Missing Data in Charts
+
+**Symptom**: Charts are empty or show "No se encontraron datos"
+
+**Checks:**
+1. Verify quotations exist in the database (go to Cotizaciones list)
+2. Check that quotations have valid dates
+3. Ensure the week/month fields are populated (older quotations may need recalculation)
+4. For role-specific views, confirm you have quotations assigned to you
+
+### Week Numbers Show as "null"
+
+**Cause**: Imported quotations without calculated week/month/year fields
+
+**Solution**: Ask your system administrator to run the migration script:
+```bash
+npx tsx src/db/migrate-v5.ts
+```
+
+This recalculates derived date fields for all quotations.
+
+### Profit Values Look Wrong
+
+**Checks:**
+1. Open the affected quotation and review the pricing fields
+2. Manually calculate: (Flete Venta - Flete Neto) + (Gastos Origen Venta - Gastos Origen Neto)
+3. Check for null values being treated as zero
+4. Verify currency consistency (mixing currencies can cause confusion)
+
+### Representative Can't See Their Data
+
+**Symptom**: Comercial user dashboard is empty but they have quotations
+
+**Checks:**
+1. Verify the quotations have `vendedor_id` set to their user ID
+2. Check that the user is logged in with the correct account
+3. Confirm the user's role is set correctly in their account
+4. Try logging out and back in to refresh the session
+
+## Future Analytics Features
+
+Planned enhancements for future versions:
+
+- **Export to Excel**: Download dashboard data directly to spreadsheets
+- **Custom date ranges**: Select arbitrary date ranges instead of fixed periods
+- **Profit margins**: Calculate and display margin percentages
+- **Year-over-year comparisons**: Compare current period to same period last year
+- **Goal tracking**: Set targets and track progress toward goals
+- **Email reports**: Schedule automatic dashboard emails
+
+Contact your system administrator or Anomaly Co. support for updates on these features.
+
+<Card title="Related Guide" icon="arrow-right" href="./creating-quotations">
+  Learn how quotation data flows into analytics dashboards
+</Card>

@@ -1,0 +1,242 @@
+---
+title: 'Net Pricing'
+api: 'GET/POST /api/pricing-netos'
+---
+
+Manage net pricing rates for different container types and destinations.
+
+## GET - List Net Pricing
+
+Retrieves all net pricing records with computed fields.
+
+### Response
+
+<ResponseField name="id" type="integer">
+  Unique identifier for the pricing record
+</ResponseField>
+
+<ResponseField name="region" type="string">
+  Geographic region
+</ResponseField>
+
+<ResponseField name="country" type="string">
+  Country name
+</ResponseField>
+
+<ResponseField name="port" type="string">
+  Port name
+</ResponseField>
+
+<ResponseField name="tipo" type="string">
+  Container type: LCL, 20', 40', or 40'HQ
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Currency (USD or EUR)
+</ResponseField>
+
+<ResponseField name="freight_net" type="number">
+  Base freight net rate
+</ResponseField>
+
+<ResponseField name="first_leg" type="number">
+  First leg cost (optional)
+</ResponseField>
+
+<ResponseField name="net_container" type="number">
+  Computed: freight_net + (first_leg ?? 0) * 50
+</ResponseField>
+
+<ResponseField name="net_m3" type="number">
+  Computed per m³ rate based on container type
+</ResponseField>
+
+<ResponseField name="rebate" type="number">
+  Rebate amount (optional)
+</ResponseField>
+
+<ResponseField name="net_total" type="number">
+  Computed: net_m3 + (rebate ?? 0)
+</ResponseField>
+
+<ResponseField name="valid_from" type="string">
+  Start date of validity
+</ResponseField>
+
+<ResponseField name="valid_until" type="string">
+  End date of validity
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  Creation timestamp
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  Last update timestamp
+</ResponseField>
+
+### Request Example
+
+```bash cURL
+curl -X GET https://api.iclcotizaciones.com/api/pricing-netos \
+  -H "Cookie: session=your_session_token"
+```
+
+### Response Example
+
+```json 200
+[
+  {
+    "id": 1,
+    "region": "Asia",
+    "country": "China",
+    "port": "Shanghai",
+    "tipo": "20'",
+    "currency": "USD",
+    "freight_net": 1200.0,
+    "first_leg": 10.0,
+    "net_container": 1700.0,
+    "net_m3": 32.0,
+    "rebate": -5.0,
+    "net_total": 27.0,
+    "valid_from": "2024-01-01",
+    "valid_until": "2024-06-30",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "region": "Asia",
+    "country": "China",
+    "port": "Shanghai",
+    "tipo": "40'",
+    "currency": "USD",
+    "freight_net": 2100.0,
+    "first_leg": 15.0,
+    "net_container": 2850.0,
+    "net_m3": 53.0,
+    "rebate": -8.0,
+    "net_total": 45.0,
+    "valid_from": "2024-01-01",
+    "valid_until": "2024-06-30",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+```json 401
+{
+  "error": "No autorizado"
+}
+```
+
+## POST - Create Net Pricing
+
+Creates a new net pricing record. This endpoint requires admin permissions. The server automatically computes `net_container`, `net_m3`, and `net_total` based on the provided values.
+
+<Note>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can create pricing records.
+</Note>
+
+### Computation Logic
+
+The server automatically computes derived fields:
+
+- `net_container = freight_net + (first_leg ?? 0) * 50`
+- `net_m3` depends on container type:
+  - For **20'**: `net_container / 50 - 2`
+  - For **40'**: `net_container / 50 - 4`
+  - For other types: `net_container / 50`
+- `net_total = net_m3 + (rebate ?? 0)`
+
+### Request Body
+
+<ParamField body="region" type="string" required>
+  Geographic region
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Country name
+</ParamField>
+
+<ParamField body="port" type="string" required>
+  Port name
+</ParamField>
+
+<ParamField body="tipo" type="string" required>
+  Container type: LCL, 20', 40', or 40'HQ
+</ParamField>
+
+<ParamField body="currency" type="string" optional default="USD">
+  Currency (USD or EUR)
+</ParamField>
+
+<ParamField body="freight_net" type="number" required>
+  Base freight net rate
+</ParamField>
+
+<ParamField body="first_leg" type="number" optional>
+  First leg cost
+</ParamField>
+
+<ParamField body="rebate" type="number" optional>
+  Rebate amount
+</ParamField>
+
+<ParamField body="valid_from" type="string" required>
+  Start date of validity (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="valid_until" type="string" required>
+  End date of validity (YYYY-MM-DD)
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X POST https://api.iclcotizaciones.com/api/pricing-netos \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "region": "Asia",
+    "country": "China",
+    "port": "Ningbo",
+    "tipo": "20'",
+    "currency": "USD",
+    "freight_net": 1250.0,
+    "first_leg": 12.0,
+    "rebate": -6.0,
+    "valid_from": "2024-03-01",
+    "valid_until": "2024-08-31"
+  }'
+```
+
+### Response Example
+
+```json 201
+{
+  "id": 45,
+  "region": "Asia",
+  "country": "China",
+  "port": "Ningbo",
+  "tipo": "20'",
+  "currency": "USD",
+  "freight_net": 1250.0,
+  "first_leg": 12.0,
+  "net_container": 1850.0,
+  "net_m3": 35.0,
+  "rebate": -6.0,
+  "net_total": 29.0,
+  "valid_from": "2024-03-01",
+  "valid_until": "2024-08-31",
+  "created_at": "2024-03-04T16:30:00Z",
+  "updated_at": "2024-03-04T16:30:00Z"
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```

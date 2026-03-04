@@ -1,0 +1,69 @@
+---
+title: Delete Quotation
+api: DELETE /api/cotizaciones/:id
+---
+
+Deletes a quotation permanently.
+
+## Authorization
+
+Requires active session. Non-admin users can only delete quotations they created.
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  Quotation ID to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="ok" type="boolean">
+  Always `true` on successful deletion
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE 'https://your-domain.com/api/cotizaciones/15' \
+  -H 'Cookie: session=your-session-token'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "ok": true
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "No autorizado"
+}
+```
+
+```json 404 Not Found
+{
+  "error": "No encontrada"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+| Status | Condition |
+|--------|----------|
+| 401 | No active session |
+| 403 | Non-admin user attempting to delete another user's quotation |
+| 404 | Quotation ID does not exist |
+
+## Notes
+
+- **Permanent deletion:** This operation cannot be undone
+- **Role-based access:** Admin users can delete any quotation. Non-admin users can only delete quotations where `vendedor_id` matches their user ID.
+- The quotation number will not be reused after deletion (sequence continues)

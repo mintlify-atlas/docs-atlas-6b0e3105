@@ -1,0 +1,65 @@
+---
+title: Get Next Quotation Number
+api: GET /api/cotizaciones/next-nro
+---
+
+Returns the next available quotation number for the current month without creating a quotation.
+
+## Authorization
+
+Requires active session.
+
+## Response
+
+<ResponseField name="quote_number" type="string">
+  Next available quotation number in format `COT-YYMM-NNNN`
+  
+  Where:
+  - `YY` = 2-digit year
+  - `MM` = 2-digit month (01-12)
+  - `NNNN` = 4-digit sequential number (zero-padded)
+  
+  Example: `COT-2602-0007`
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://your-domain.com/api/cotizaciones/next-nro' \
+  -H 'Cookie: session=your-session-token'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "quote_number": "COT-2602-0007"
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+</ResponseExample>
+
+## Server Logic
+
+1. Gets current date
+2. Builds month key as `YYMM` (e.g., `2602` for February 2026)
+3. Counts existing quotations with numbers matching pattern `COT-YYMM-%`
+4. Increments count by 1
+5. Returns formatted number with zero-padded 4-digit sequence
+
+## Use Cases
+
+- **Form preview:** Display the quotation number before the user submits the form
+- **Number validation:** Check what the next number will be before creating a quotation
+- **UI preparation:** Pre-fill forms with the upcoming quotation number
+
+## Notes
+
+- This endpoint does **not** reserve the number
+- The actual number assigned on creation may differ if other quotations are created in the meantime
+- Quotation numbers are sequential per month and reset each month
+- The sequence restarts at 0001 on the first day of each month

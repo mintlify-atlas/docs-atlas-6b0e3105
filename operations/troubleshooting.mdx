@@ -1,0 +1,801 @@
+---
+title: Troubleshooting Guide
+description: Common issues and solutions for ICL Cotizaciones
+---
+
+## Overview
+
+This guide covers common issues, error messages, and solutions for ICL Cotizaciones.
+
+## Installation Issues
+
+### Error: Cannot find module 'better-sqlite3'
+
+**Symptoms:**
+
+```
+Error: Cannot find module 'better-sqlite3'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+```
+
+**Cause:**
+
+better-sqlite3 is a native module that requires compilation with node-gyp. Build may have failed during `npm install`.
+
+**Solution:**
+
+<Steps>
+
+### Install Build Tools
+
+On Ubuntu/Debian:
+
+```bash
+sudo apt-get install build-essential python3
+```
+
+On macOS:
+
+```bash
+xcode-select --install
+```
+
+### Rebuild better-sqlite3
+
+```bash
+npm rebuild better-sqlite3
+```
+
+Or force rebuild from source:
+
+```bash
+npm install --build-from-source better-sqlite3
+```
+
+### Clean Install
+
+If rebuild fails:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+</Steps>
+
+### Error: next build fails with better-sqlite3
+
+**Symptoms:**
+
+```
+Error: Cannot bundle native module better-sqlite3
+```
+
+**Cause:**
+
+better-sqlite3 is a native module and cannot be bundled by webpack.
+
+**Solution:**
+
+Verify `next.config.ts` includes:
+
+```typescript
+serverExternalPackages: ["better-sqlite3"]
+```
+
+If missing, add it to the Next.js config.
+
+## Database Errors
+
+### Error: SQLITE_CANTOPEN: unable to open database file
+
+**Symptoms:**
+
+```
+Error: SQLITE_CANTOPEN: unable to open database file
+    at Database.prepare (better-sqlite3)
+```
+
+**Cause:**
+
+- Directory `data/` does not exist
+- Insufficient file permissions
+- Disk full
+
+**Solution:**
+
+<Steps>
+
+### Create Data Directory
+
+```bash
+mkdir -p data
+chmod 755 data
+```
+
+### Check Disk Space
+
+```bash
+df -h
+```
+
+Ensure sufficient free space (minimum 1GB recommended).
+
+### Verify Permissions
+
+```bash
+ls -la data/
+```
+
+Ensure the application user has write access:
+
+```bash
+sudo chown -R $USER:$USER data/
+```
+
+### Test Database Creation
+
+```bash
+sqlite3 data/test.db "CREATE TABLE test (id INTEGER);"
+rm data/test.db
+```
+
+</Steps>
+
+### Error: UNIQUE constraint failed: quotations.quote_number
+
+**Symptoms:**
+
+```
+Error: UNIQUE constraint failed: quotations.quote_number
+```
+
+**Cause:**
+
+Race condition in quote number generation. Multiple simultaneous requests created the same `COT-YYMM-NNNN` number.
+
+**Solution:**
+
+<Steps>
+
+### Retry the Operation
+
+The auto-generated quote number will increment on retry.
+
+### Implement Transaction Lock (Future Enhancement)
+
+Add database-level locking to quote creation logic:
+
+```typescript
+const result = db.transaction(() => {
+  const lastQuote = getLastQuoteNumber();
+  const newNumber = generateNextNumber(lastQuote);
+  return insertQuotation({ quote_number: newNumber, ... });
+})();
+```
+
+</Steps>
+
+### Error: SQLITE_BUSY: database is locked
+
+**Symptoms:**
+
+```
+Error: SQLITE_BUSY: database is locked
+```
+
+**Cause:**
+
+Another process has an exclusive lock on the database.
+
+**Solution:**
+
+<Steps>
+
+### Check for Multiple Instances
+
+```bash
+ps aux | grep node
+```
+
+Kill duplicate processes:
+
+```bash
+pkill -f "next start"
+pm2 restart icl-cotizaciones
+```
+
+### Close SQLite CLI Sessions
+
+Ensure no active `sqlite3` sessions:
+
+```bash
+lsof data/icl.db
+```
+
+### Increase Busy Timeout
+
+Add to `src/db/index.ts`:
+
+```typescript
+sqlite.pragma("busy_timeout = 5000"); // 5 second timeout
+```
+
+</Steps>
+
+### Error: Database disk image is malformed
+
+**Symptoms:**
+
+```
+Error: SQLITE_CORRUPT: database disk image is malformed
+```
+
+**Cause:**
+
+Database file corruption due to power failure, disk error, or improper shutdown.
+
+<Warning>
+  **CRITICAL**: Restore from backup immediately. Do not attempt to repair.
+</Warning>
+
+**Solution:**
+
+<Steps>
+
+### Stop Application
+
+```bash
+pm2 stop icl-cotizaciones
+```
+
+### Restore from Backup
+
+See [Database Management - Restore from Backup](/operations/database-management#restore-from-backup).
+
+### If No Backup Available
+
+Attempt recovery (data loss likely):
+
+```bash
+cp data/icl.db data/icl.db.corrupt
+sqlite3 data/icl.db.corrupt ".recover" | sqlite3 data/icl.db.recovered
+```
+
+Verify recovered data:
+
+```bash
+sqlite3 data/icl.db.recovered "SELECT COUNT(*) FROM quotations;"
+```
+
+</Steps>
+
+## Authentication Errors
+
+### Error: 401 No autorizado
+
+**Symptoms:**
+
+API requests return 401 status code.
+
+**Cause:**
+
+- Session cookie expired (default TTL not set)
+- Session cookie not sent by browser
+- Session password changed (invalidates all sessions)
+
+**Solution:**
+
+<Steps>
+
+### Clear Browser Cookies
+
+In browser DevTools:
+
+1. Open Application tab
+2. Navigate to Cookies
+3. Delete `icl-session` cookie
+4. Refresh page
+
+### Login Again
+
+Navigate to `/login` and re-authenticate.
+
+### Check Session Configuration
+
+Verify `src/lib/session.ts` has correct password:
+
+```typescript
+password: process.env.SESSION_PASSWORD || "dev-key"
+```
+
+If `SESSION_PASSWORD` env var changed, all users must re-login.
+
+</Steps>
+
+### Error: 403 No autorizado
+
+**Symptoms:**
+
+API returns 403 status code for admin operations.
+
+**Cause:**
+
+Authenticated user lacks required role permissions.
+
+**Solution:**
+
+<Steps>
+
+### Check User Role
+
+Query database:
+
+```bash
+sqlite3 data/icl.db "SELECT full_name, email, role FROM users WHERE email = 'user@example.com';"
+```
+
+### Update User Role
+
+If user needs elevated permissions:
+
+```sql
+UPDATE users 
+SET role = 'DIRECTOR' 
+WHERE email = 'user@example.com';
+```
+
+Available roles: `DIRECTOR`, `GERENTE`, `COMERCIAL`, `ADMINISTRACION`, `OPERACIONES`, `CSV`
+
+### Login with Admin Account
+
+Use a DIRECTOR or GERENTE account for admin operations.
+
+</Steps>
+
+## Application Errors
+
+### Dashboard shows "Snull" in week axis
+
+**Symptoms:**
+
+Weekly chart displays "Snull" labels instead of "S12", "S13", etc.
+
+**Cause:**
+
+Quotations table has `week = NULL` for records imported before the `week` column was added.
+
+**Diagnosis:**
+
+```bash
+sqlite3 data/icl.db "SELECT COUNT(*) FROM quotations WHERE week IS NULL;"
+```
+
+If count > 0, backfill needed.
+
+**Solution:**
+
+<Steps>
+
+### Run Backfill Migration
+
+```bash
+npx tsx src/db/migrate-v5.ts
+```
+
+This calculates and populates `week` for all NULL records.
+
+### Verify Backfill
+
+```bash
+sqlite3 data/icl.db "SELECT COUNT(*) FROM quotations WHERE week IS NULL;"
+```
+
+Expected: `0`
+
+### Restart Application
+
+```bash
+pm2 restart icl-cotizaciones
+```
+
+</Steps>
+
+### Session lost after server restart
+
+**Symptoms:**
+
+Users logged out after restarting the application.
+
+**Cause:**
+
+iron-session uses symmetric encryption. If the session password changes, all existing cookies become invalid.
+
+**Solution:**
+
+<Steps>
+
+### Use Environment Variable
+
+Ensure session password is stored in env var, not hardcoded:
+
+```bash
+export SESSION_PASSWORD="your-secure-key-32-chars-min"
+```
+
+### Persist Environment
+
+Add to `.env.production` or systemd service file.
+
+### Notify Users
+
+If password must change, inform users they'll need to re-login.
+
+</Steps>
+
+## Performance Issues
+
+### Slow query performance
+
+**Symptoms:**
+
+API requests take > 1 second to respond.
+
+**Diagnosis:**
+
+Enable query logging in `src/db/index.ts`:
+
+```typescript
+sqlite.on('profile', (sql, time) => {
+  if (time > 100) {
+    console.log(`[SLOW QUERY ${time}ms]`, sql);
+  }
+});
+```
+
+**Solution:**
+
+<Steps>
+
+### Add Database Indexes
+
+```sql
+CREATE INDEX idx_quotations_client ON quotations(client_id);
+CREATE INDEX idx_quotations_status ON quotations(status);
+CREATE INDEX idx_quotations_date ON quotations(date);
+```
+
+### Run ANALYZE
+
+```bash
+sqlite3 data/icl.db "ANALYZE;"
+```
+
+### Optimize Queries
+
+Rewrite N+1 queries to use JOINs:
+
+```typescript
+// Before: N+1 queries
+const quotations = await db.select().from(schema.quotations);
+for (const q of quotations) {
+  q.client = await db.select().from(schema.clients).where(eq(schema.clients.id, q.client_id));
+}
+
+// After: Single JOIN
+const quotations = await db
+  .select()
+  .from(schema.quotations)
+  .leftJoin(schema.clients, eq(schema.quotations.client_id, schema.clients.id));
+```
+
+</Steps>
+
+### High memory usage
+
+**Symptoms:**
+
+Node.js process exceeds 1GB RAM.
+
+**Solution:**
+
+<Steps>
+
+### Monitor Memory
+
+```bash
+pm2 monit
+```
+
+### Set Memory Limit
+
+In PM2 config:
+
+```javascript
+max_memory_restart: '1G'
+```
+
+Or Node.js flag:
+
+```bash
+node --max-old-space-size=1024 node_modules/next/dist/bin/next start
+```
+
+### Profile Memory Leaks
+
+Use Node.js heap snapshot:
+
+```bash
+node --inspect node_modules/next/dist/bin/next start
+```
+
+Connect Chrome DevTools to inspect memory.
+
+</Steps>
+
+## Build Errors
+
+### TypeScript errors during build
+
+**Symptoms:**
+
+```
+npm run build
+Type error: Property 'xyz' does not exist on type...
+```
+
+**Solution:**
+
+<Steps>
+
+### Check TypeScript Version
+
+```bash
+npm list typescript
+```
+
+Ensure version matches `package.json` (5.9.3).
+
+### Regenerate Types
+
+If using Drizzle schema:
+
+```bash
+npm run db:generate
+```
+
+### Clear Next.js Cache
+
+```bash
+rm -rf .next
+npm run build
+```
+
+</Steps>
+
+### Out of memory during build
+
+**Symptoms:**
+
+```
+JavaScript heap out of memory
+```
+
+**Solution:**
+
+Increase Node.js memory:
+
+```bash
+NODE_OPTIONS="--max-old-space-size=4096" npm run build
+```
+
+## Production Issues
+
+### HTTPS/SSL errors
+
+**Symptoms:**
+
+- Browser shows "Not Secure"
+- Session cookies not sent
+
+**Solution:**
+
+<Steps>
+
+### Verify SSL Certificate
+
+```bash
+openssl s_client -connect cotizaciones.iclsa.com:443 -servername cotizaciones.iclsa.com
+```
+
+Check certificate expiration:
+
+```bash
+echo | openssl s_client -connect cotizaciones.iclsa.com:443 2>/dev/null | openssl x509 -noout -dates
+```
+
+### Renew Let's Encrypt Certificate
+
+```bash
+sudo certbot renew
+sudo systemctl reload nginx
+```
+
+### Enable Secure Cookies
+
+In `src/lib/session.ts`:
+
+```typescript
+secure: process.env.NODE_ENV === 'production' // must be true for HTTPS
+```
+
+</Steps>
+
+### Application not starting
+
+**Symptoms:**
+
+```
+pm2 status shows "errored"
+```
+
+**Diagnosis:**
+
+```bash
+pm2 logs icl-cotizaciones --lines 100
+```
+
+**Common Causes:**
+
+<Steps>
+
+### Port Already in Use
+
+Check port 3000:
+
+```bash
+lsof -i :3000
+```
+
+Kill conflicting process:
+
+```bash
+kill -9 <PID>
+```
+
+### Missing Dependencies
+
+```bash
+npm install --production
+```
+
+### Database File Missing
+
+```bash
+npm run db:migrate
+```
+
+### Environment Variables Not Set
+
+Verify `.env.production` or PM2 config has required vars.
+
+</Steps>
+
+## Data Issues
+
+### Duplicate client records
+
+**Solution:**
+
+Identify duplicates:
+
+```sql
+SELECT legal_name, COUNT(*) as count
+FROM clients
+GROUP BY LOWER(legal_name)
+HAVING count > 1;
+```
+
+Merge duplicates:
+
+```sql
+-- Update quotations to reference primary client
+UPDATE quotations
+SET client_id = <primary_id>
+WHERE client_id = <duplicate_id>;
+
+-- Delete duplicate
+DELETE FROM clients WHERE id = <duplicate_id>;
+```
+
+### Missing client data after import
+
+**Solution:**
+
+Re-run enrichment scripts in order:
+
+```bash
+npx tsx src/db/link-cotizaciones.ts
+npx tsx src/db/normalize-clients.ts
+npx tsx src/db/enrich-clients.ts
+npx tsx src/db/tag-final-clients.ts
+```
+
+## Logging and Debugging
+
+### Enable Debug Logging
+
+Set environment variable:
+
+```bash
+DEBUG=* npm run dev
+```
+
+For production:
+
+```bash
+NODE_ENV=production DEBUG=app:* npm start
+```
+
+### View Application Logs
+
+**PM2:**
+
+```bash
+pm2 logs icl-cotizaciones --lines 200
+pm2 logs icl-cotizaciones --err  # errors only
+```
+
+**Systemd:**
+
+```bash
+sudo journalctl -u icl-cotizaciones -f
+sudo journalctl -u icl-cotizaciones --since "1 hour ago"
+```
+
+**Docker:**
+
+```bash
+docker-compose logs -f --tail=100
+```
+
+### Database Query Logs
+
+Enable in `src/db/index.ts`:
+
+```typescript
+sqlite.on('profile', (sql, time) => {
+  console.log(`[SQL ${time}ms]`, sql);
+});
+```
+
+## Getting Help
+
+If issues persist:
+
+1. Check application logs for error details
+2. Verify database integrity: `sqlite3 data/icl.db "PRAGMA integrity_check;"`
+3. Review recent migrations or data imports
+4. Restore from backup if data corruption suspected
+5. Contact development team with:
+   - Error message and stack trace
+   - Steps to reproduce
+   - Environment details (Node version, OS)
+   - Recent changes (deployments, migrations)
+
+## Preventive Measures
+
+<Steps>
+
+- [ ] Set up automated daily backups
+- [ ] Configure monitoring and alerts
+- [ ] Enable error tracking (Sentry, etc.)
+- [ ] Implement health check endpoint
+- [ ] Document custom deployment procedures
+- [ ] Keep dependencies updated
+- [ ] Test migrations on staging before production
+- [ ] Monitor disk space usage
+- [ ] Review logs regularly for warnings
+- [ ] Maintain runbook with team-specific procedures
+
+</Steps>

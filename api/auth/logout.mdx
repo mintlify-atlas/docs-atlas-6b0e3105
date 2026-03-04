@@ -1,0 +1,43 @@
+---
+title: 'Logout'
+api: 'POST /api/auth/logout'
+description: 'Destroy the current user session'
+---
+
+Destroys the current user's session by removing the `icl-session` cookie. This endpoint does not require authentication and will succeed even if no session exists.
+
+## Request
+
+No request body required.
+
+## Response
+
+<ResponseField name="ok" type="boolean">
+  Always returns `true` to indicate the logout request was processed
+</ResponseField>
+
+## Session Behavior
+
+Calling this endpoint:
+- Destroys the `icl-session` cookie
+- Clears all session data (userId, email, full_name, rol, isLoggedIn)
+- Does not return an error if called when already logged out
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.example.com/api/auth/logout \
+  -H "Cookie: icl-session=<session-value>"
+```
+
+```json Response
+{
+  "ok": true
+}
+```
+</RequestExample>
+
+## Notes
+
+- This endpoint always returns a successful response
+- The session cookie is automatically cleared by the server
+- Subsequent requests will not be authenticated after logout

@@ -1,0 +1,501 @@
+---
+title: Deployment Guide
+description: Deploy ICL Cotizaciones to production environments
+---
+
+## Overview
+
+ICL Cotizaciones is a Next.js 16 application with a SQLite database. This guide covers deployment to production environments.
+
+## Architecture
+
+The application consists of:
+
+- **Web Server**: Next.js 16 App Router on Node.js
+- **Database**: SQLite with better-sqlite3 (WAL mode)
+- **Session Store**: Encrypted HTTP-only cookies (iron-session)
+- **Static Assets**: Served by Next.js
+
+## Prerequisites
+
+| Requirement | Version | Notes |
+|------------|---------|-------|
+| Node.js | 20+ | Required for Next.js 16 |
+| npm | Latest | Included with Node.js |
+| SQLite3 | 3.x | For database CLI tools |
+
+## Environment Configuration
+
+<Warning>
+  The application currently has hardcoded secrets in source code. These **must** be moved to environment variables before deploying to production.
+</Warning>
+
+### Required Environment Variables
+
+Create a `.env.production` file with the following variables:
+
+```bash
+# Session encryption key (minimum 32 characters)
+SESSION_PASSWORD=your-secure-random-password-at-least-32-chars
+
+# Node.js environment
+NODE_ENV=production
+
+# Server port (default: 3000)
+PORT=3000
+
+# Database path (optional, defaults to {cwd}/data/icl.db)
+DATABASE_PATH=./data/icl.db
+```
+
+### Security Configuration
+
+Before production deployment, update the following in source code:
+
+**src/lib/session.ts:14** - Move session password to environment variable:
+
+```typescript
+password: process.env.SESSION_PASSWORD || "fallback-dev-key",
+```
+
+**src/lib/session.ts:17** - Enable secure cookies for HTTPS:
+
+```typescript
+secure: process.env.NODE_ENV === "production", // true in production
+```
+
+## Build Process
+
+<Steps>
+
+### Install Dependencies
+
+```bash
+npm install --production
+```
+
+### Build the Application
+
+```bash
+npm run build
+```
+
+This creates an optimized production build in `.next/`.
+
+### Verify Build
+
+Check that the build completed successfully:
+
+```bash
+ls -la .next/
+```
+
+You should see directories like `server`, `static`, and `standalone` (if configured).
+
+</Steps>
+
+## Database Setup
+
+<Steps>
+
+### Create Data Directory
+
+```bash
+mkdir -p data
+chmod 755 data
+```
+
+### Run Migrations
+
+Apply database schema migrations:
+
+```bash
+npm run db:migrate
+```
+
+This creates `data/icl.db` with all tables using Drizzle Kit.
+
+### Verify Database
+
+Check that the database was created:
+
+```bash
+sqlite3 data/icl.db ".tables"
+```
+
+Expected output:
+```
+clients                locations              quotations
+commercial_agreements  port_rates             users
+                       pricing_netos
+```
+
+</Steps>
+
+## Deployment Options
+
+### Option 1: VPS/Bare Metal with PM2
+
+<Steps>
+
+### Install PM2
+
+```bash
+npm install -g pm2
+```
+
+### Create PM2 Ecosystem File
+
+Create `ecosystem.config.js`:
+
+```javascript
+module.exports = {
+  apps: [{
+    name: 'icl-cotizaciones',
+    script: 'node_modules/next/dist/bin/next',
+    args: 'start',
+    cwd: '/path/to/iclapp',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000,
+      SESSION_PASSWORD: 'your-secure-password',
+    },
+  }],
+};
+```
+
+### Start Application
+
+```bash
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+### Monitor Application
+
+```bash
+pm2 status
+pm2 logs icl-cotizaciones
+pm2 monit
+```
+
+</Steps>
+
+### Option 2: Docker Deployment
+
+Create a `Dockerfile`:
+
+```dockerfile
+FROM node:20-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production
+
+# Build the application
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# Production image
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/drizzle ./drizzle
+
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
+USER nextjs
+EXPOSE 3000
+ENV PORT=3000
+
+CMD ["npm", "start"]
+```
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - SESSION_PASSWORD=${SESSION_PASSWORD}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+```
+
+<Steps>
+
+### Build and Run
+
+```bash
+docker-compose build
+docker-compose up -d
+```
+
+### Run Migrations
+
+```bash
+docker-compose exec web npm run db:migrate
+```
+
+### View Logs
+
+```bash
+docker-compose logs -f
+```
+
+</Steps>
+
+### Option 3: Systemd Service
+
+Create `/etc/systemd/system/icl-cotizaciones.service`:
+
+```ini
+[Unit]
+Description=ICL Cotizaciones
+After=network.target
+
+[Service]
+Type=simple
+User=iclapp
+WorkingDirectory=/opt/iclapp
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="SESSION_PASSWORD=your-secure-password"
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=icl-cotizaciones
+
+[Install]
+WantedBy=multi-user.target
+```
+
+<Steps>
+
+### Enable and Start Service
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable icl-cotizaciones
+sudo systemctl start icl-cotizaciones
+```
+
+### Check Status
+
+```bash
+sudo systemctl status icl-cotizaciones
+sudo journalctl -u icl-cotizaciones -f
+```
+
+</Steps>
+
+## Reverse Proxy Configuration
+
+### Nginx
+
+Create `/etc/nginx/sites-available/icl-cotizaciones`:
+
+```nginx
+server {
+    listen 80;
+    server_name cotizaciones.iclsa.com;
+
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name cotizaciones.iclsa.com;
+
+    # SSL Configuration
+    ssl_certificate /etc/letsencrypt/live/cotizaciones.iclsa.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/cotizaciones.iclsa.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Security Headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+<Steps>
+
+### Enable Site
+
+```bash
+sudo ln -s /etc/nginx/sites-available/icl-cotizaciones /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Setup SSL with Certbot
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d cotizaciones.iclsa.com
+```
+
+</Steps>
+
+## Post-Deployment Verification
+
+<Steps>
+
+### Check Application Health
+
+```bash
+curl http://localhost:3000
+```
+
+Expected: HTML response from Next.js
+
+### Test Database Connection
+
+```bash
+sqlite3 data/icl.db "SELECT COUNT(*) FROM users;"
+```
+
+### Verify Session Cookies
+
+Check that cookies are set with proper security flags:
+
+```bash
+curl -v https://cotizaciones.iclsa.com | grep -i "set-cookie"
+```
+
+Expected: `HttpOnly; Secure; SameSite=Lax`
+
+### Monitor Logs
+
+```bash
+# PM2
+pm2 logs icl-cotizaciones --lines 50
+
+# Systemd
+sudo journalctl -u icl-cotizaciones -n 50
+
+# Docker
+docker-compose logs --tail=50 -f
+```
+
+</Steps>
+
+## Performance Optimization
+
+### Enable Database Backups
+
+See [Database Management](/operations/database-management#automated-backups) for backup configuration.
+
+### Configure WAL Checkpoint
+
+Optimize SQLite WAL mode performance:
+
+```sql
+PRAGMA wal_autocheckpoint = 1000;
+PRAGMA journal_size_limit = 67108864;
+```
+
+### Enable Response Caching
+
+Add caching headers to Next.js responses for static assets.
+
+## Security Checklist
+
+<Steps>
+
+- [ ] Move `SESSION_PASSWORD` to environment variable
+- [ ] Enable `secure: true` for cookies in production
+- [ ] Configure HTTPS with valid SSL certificate
+- [ ] Set restrictive file permissions on `data/icl.db` (600)
+- [ ] Enable firewall rules to restrict port 3000 access
+- [ ] Configure rate limiting on reverse proxy
+- [ ] Set up regular database backups
+- [ ] Enable audit logging for API requests
+- [ ] Review and rotate session keys periodically
+
+</Steps>
+
+## Rollback Procedure
+
+If deployment fails:
+
+<Steps>
+
+### Stop New Version
+
+```bash
+pm2 stop icl-cotizaciones
+# or
+sudo systemctl stop icl-cotizaciones
+```
+
+### Restore Database Backup
+
+```bash
+cp data/icl.db.backup data/icl.db
+```
+
+### Deploy Previous Version
+
+```bash
+git checkout <previous-tag>
+npm install
+npm run build
+pm2 restart icl-cotizaciones
+```
+
+### Verify Rollback
+
+```bash
+curl http://localhost:3000
+pm2 logs icl-cotizaciones
+```
+
+</Steps>
+
+## Troubleshooting
+
+For deployment issues, see [Troubleshooting Guide](/operations/troubleshooting).

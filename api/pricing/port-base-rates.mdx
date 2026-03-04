@@ -1,0 +1,239 @@
+---
+title: 'Port Base Rates'
+api: 'GET/POST /api/tarifario-puertos-base'
+---
+
+Manage port base rates with tiered pricing based on cargo volume (CBM).
+
+## GET - List Port Base Rates
+
+Retrieves all port base rate records.
+
+### Response
+
+<ResponseField name="id" type="integer">
+  Unique identifier for the rate record
+</ResponseField>
+
+<ResponseField name="region" type="string">
+  Geographic region
+</ResponseField>
+
+<ResponseField name="country" type="string">
+  Country name
+</ResponseField>
+
+<ResponseField name="port_of_loading" type="string">
+  Port of loading name
+</ResponseField>
+
+<ResponseField name="rate_0_3_cbm" type="number">
+  Rate for 0-3 CBM shipments
+</ResponseField>
+
+<ResponseField name="rate_3_5_cbm" type="number">
+  Rate for 3-5 CBM shipments
+</ResponseField>
+
+<ResponseField name="rate_5_10_cbm" type="number">
+  Rate for 5-10 CBM shipments
+</ResponseField>
+
+<ResponseField name="rate_10_15_cbm" type="number">
+  Rate for 10-15 CBM shipments
+</ResponseField>
+
+<ResponseField name="gri" type="string">
+  General Rate Increase information (optional)
+</ResponseField>
+
+<ResponseField name="minimum" type="number">
+  Minimum charge (optional)
+</ResponseField>
+
+<ResponseField name="via" type="string">
+  Transit route (optional)
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Currency (ARS, USD, or EUR)
+</ResponseField>
+
+<ResponseField name="transit_time" type="string">
+  Expected transit time (optional)
+</ResponseField>
+
+<ResponseField name="valid_from" type="string">
+  Start date of validity
+</ResponseField>
+
+<ResponseField name="valid_until" type="string">
+  End date of validity
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  Creation timestamp
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  Last update timestamp
+</ResponseField>
+
+### Request Example
+
+```bash cURL
+curl -X GET https://api.iclcotizaciones.com/api/tarifario-puertos-base \
+  -H "Cookie: session=your_session_token"
+```
+
+### Response Example
+
+```json 200
+[
+  {
+    "id": 1,
+    "region": "Asia",
+    "country": "China",
+    "port_of_loading": "Shanghai",
+    "rate_0_3_cbm": 180.0,
+    "rate_3_5_cbm": 165.0,
+    "rate_5_10_cbm": 150.0,
+    "rate_10_15_cbm": 140.0,
+    "gri": "GRI +50 from March 2024",
+    "minimum": 300.0,
+    "via": "Buenos Aires",
+    "currency": "USD",
+    "transit_time": "45-50 days",
+    "valid_from": "2024-01-01",
+    "valid_until": "2024-06-30",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
+```
+
+```json 401
+{
+  "error": "No autorizado"
+}
+```
+
+## POST - Create Port Base Rate
+
+Creates a new port base rate record. This endpoint requires admin permissions.
+
+<Note>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can create port base rates.
+</Note>
+
+### Request Body
+
+<ParamField body="region" type="string" required>
+  Geographic region
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Country name
+</ParamField>
+
+<ParamField body="port_of_loading" type="string" required>
+  Port of loading name
+</ParamField>
+
+<ParamField body="rate_0_3_cbm" type="number" required>
+  Rate for 0-3 CBM shipments
+</ParamField>
+
+<ParamField body="rate_3_5_cbm" type="number" required>
+  Rate for 3-5 CBM shipments
+</ParamField>
+
+<ParamField body="rate_5_10_cbm" type="number" required>
+  Rate for 5-10 CBM shipments
+</ParamField>
+
+<ParamField body="rate_10_15_cbm" type="number" required>
+  Rate for 10-15 CBM shipments
+</ParamField>
+
+<ParamField body="gri" type="string" optional>
+  General Rate Increase information
+</ParamField>
+
+<ParamField body="minimum" type="number" optional>
+  Minimum charge
+</ParamField>
+
+<ParamField body="via" type="string" optional>
+  Transit route
+</ParamField>
+
+<ParamField body="currency" type="string" optional default="USD">
+  Currency (ARS, USD, or EUR)
+</ParamField>
+
+<ParamField body="transit_time" type="string" optional>
+  Expected transit time
+</ParamField>
+
+<ParamField body="valid_from" type="string" required>
+  Start date of validity (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="valid_until" type="string" required>
+  End date of validity (YYYY-MM-DD)
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X POST https://api.iclcotizaciones.com/api/tarifario-puertos-base \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "region": "Asia",
+    "country": "China",
+    "port_of_loading": "Ningbo",
+    "rate_0_3_cbm": 175.0,
+    "rate_3_5_cbm": 160.0,
+    "rate_5_10_cbm": 145.0,
+    "rate_10_15_cbm": 135.0,
+    "gri": "No GRI currently",
+    "minimum": 280.0,
+    "via": "Buenos Aires",
+    "currency": "USD",
+    "transit_time": "40-45 days",
+    "valid_from": "2024-03-01",
+    "valid_until": "2024-08-31"
+  }'
+```
+
+### Response Example
+
+```json 201
+{
+  "id": 28,
+  "region": "Asia",
+  "country": "China",
+  "port_of_loading": "Ningbo",
+  "rate_0_3_cbm": 175.0,
+  "rate_3_5_cbm": 160.0,
+  "rate_5_10_cbm": 145.0,
+  "rate_10_15_cbm": 135.0,
+  "gri": "No GRI currently",
+  "minimum": 280.0,
+  "via": "Buenos Aires",
+  "currency": "USD",
+  "transit_time": "40-45 days",
+  "valid_from": "2024-03-01",
+  "valid_until": "2024-08-31",
+  "created_at": "2024-03-04T16:45:00Z",
+  "updated_at": "2024-03-04T16:45:00Z"
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```

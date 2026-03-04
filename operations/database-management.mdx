@@ -1,0 +1,567 @@
+---
+title: Database Management
+description: Manage SQLite database operations, migrations, backups, and maintenance
+---
+
+## Overview
+
+ICL Cotizaciones uses SQLite with better-sqlite3 for data storage. The database is located at `{cwd}/data/icl.db` and runs in WAL (Write-Ahead Logging) mode with foreign keys enabled.
+
+## Database Configuration
+
+### Location and Settings
+
+**Database Path**: `./data/icl.db` (relative to application root)
+
+**Configuration** (src/db/index.ts:12-15):
+
+```typescript
+const sqlite = new Database(dbPath);
+sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("foreign_keys = ON");
+```
+
+**Drizzle Configuration** (drizzle.config.ts):
+
+```typescript
+export default defineConfig({
+  schema: "./src/db/schema.ts",
+  out: "./drizzle",
+  dialect: "sqlite",
+  dbCredentials: {
+    url: "./data/icl.db",
+  },
+});
+```
+
+### Database Schema
+
+The database contains the following tables:
+
+| Table | Description |
+|-------|-------------|
+| `users` | System users with authentication and roles |
+| `clients` | Customer records (FFWW, Final, or Both) |
+| `locations` | Origin and via locations for shipping |
+| `commercial_agreements` | Client pricing and terms |
+| `quotations` | Freight quotations and sales records |
+| `pricing_netos` | Base freight rates by port and container type |
+| `port_rates` | LCL rate schedules by volume |
+
+## Schema Migrations
+
+### Migration Workflow
+
+<Steps>
+
+### Modify Schema
+
+Edit the schema definition in `src/db/schema.ts`.
+
+Example: Adding a new field
+
+```typescript
+export const clients = sqliteTable("clients", {
+  // ... existing fields
+  website: text("website"), // new field
+});
+```
+
+### Generate Migration
+
+Create SQL migration files:
+
+```bash
+npm run db:generate
+```
+
+This runs `drizzle-kit generate` and creates timestamped SQL files in `drizzle/`.
+
+### Review Migration
+
+Check the generated SQL:
+
+```bash
+cat drizzle/0001_*.sql
+```
+
+Expected output:
+```sql
+ALTER TABLE clients ADD COLUMN website TEXT;
+```
+
+### Apply Migration
+
+Run the migration:
+
+```bash
+npm run db:migrate
+```
+
+This runs `drizzle-kit migrate` and applies changes to `data/icl.db`.
+
+### Verify Migration
+
+Check the schema:
+
+```bash
+sqlite3 data/icl.db ".schema clients"
+```
+
+</Steps>
+
+### SQLite Limitations
+
+<Warning>
+  SQLite has limited ALTER TABLE support. Some schema changes require table recreation:
+  - Adding/removing CHECK constraints
+  - Modifying column types
+  - Adding NOT NULL to existing columns
+</Warning>
+
+For complex migrations, use manual migration scripts (see below).
+
+## Manual Migration Scripts
+
+The repository includes manual migration scripts for operations that Drizzle/SQLite cannot handle automatically:
+
+### Available Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `migrate.ts` | `npx tsx src/db/migrate.ts` | Initial schema creation |
+| `migrate-v2.ts` | `npx tsx src/db/migrate-v2.ts` | Schema version 2 changes |
+| `migrate-v3.ts` | `npx tsx src/db/migrate-v3.ts` | Fix CHECK constraint: `location_type` enum |
+| `migrate-v4.ts` | `npx tsx src/db/migrate-v4.ts` | Add `CSV` role to users CHECK constraint |
+| `migrate-v5.ts` | `npx tsx src/db/migrate-v5.ts` | Backfill `week` column for 1049 records |
+
+### Running Manual Migrations
+
+<Steps>
+
+### Execute Migration Script
+
+```bash
+npx tsx src/db/migrate-v5.ts
+```
+
+### Check Migration Output
+
+Review console output for success messages:
+
+```
+Backfilling week for 1049 quotations...
+Updated 1049 records
+```
+
+### Verify Data
+
+Query the database:
+
+```bash
+sqlite3 data/icl.db "SELECT COUNT(*) FROM quotations WHERE week IS NULL;"
+```
+
+Expected: `0`
+
+</Steps>
+
+## Data Import Scripts
+
+For migrating historical data from AppSheet or Excel:
+
+### Import Scripts
+
+| Script | Command | Type | Description |
+|--------|---------|------|-------------|
+| `import.ts` | `npx tsx src/db/import.ts` | Destructive | Import from XLSX (`icldata.xlsx`) |
+| `import-cotizaciones.ts` | `npx tsx src/db/import-cotizaciones.ts` | Idempotent | Import quotations from JSON |
+| `link-cotizaciones.ts` | `npx tsx src/db/link-cotizaciones.ts` | Idempotent | Link quotations to clients |
+| `normalize-clients.ts` | `npx tsx src/db/normalize-clients.ts` | Idempotent | Normalize client names to Title Case |
+| `enrich-clients.ts` | `npx tsx src/db/enrich-clients.ts` | Idempotent | Add phone, email, tax_id from JSON |
+| `tag-final-clients.ts` | `npx tsx src/db/tag-final-clients.ts` | Idempotent | Mark `Both` client types |
+
+<Warning>
+  `import.ts` is destructive and clears tables before import. Use only for initial data load.
+</Warning>
+
+### AppSheet Migration Workflow
+
+Recommended order for importing AppSheet data:
+
+<Steps>
+
+### Import Quotations
+
+```bash
+npx tsx src/db/import-cotizaciones.ts
+```
+
+Imports from `allcotis.json`. Uses `INSERT OR IGNORE` (safe to re-run).
+
+### Link to Clients
+
+```bash
+npx tsx src/db/link-cotizaciones.ts
+```
+
+Matches quotations to clients by name. Creates missing clients.
+
+### Normalize Names
+
+```bash
+npx tsx src/db/normalize-clients.ts
+```
+
+Converts names to Title Case (e.g., "ACME SRL" → "Acme SRL").
+
+### Enrich Client Data
+
+```bash
+npx tsx src/db/enrich-clients.ts
+```
+
+Adds phone, email, user_id, tax_id from `CLIENTES.json`.
+
+### Tag Final Clients
+
+```bash
+npx tsx src/db/tag-final-clients.ts
+```
+
+Marks clients from `CLIENTES_FINALES.json` as `Both` type.
+
+</Steps>
+
+## Seed Data
+
+For development and testing:
+
+### Running Seed
+
+<Warning>
+  **DESTRUCTIVE**: This deletes the existing database and creates a new one.
+</Warning>
+
+```bash
+npm run db:seed
+```
+
+This runs `tsx src/db/seed.ts` which:
+
+1. Deletes `data/icl.db` and WAL files
+2. Creates fresh database with schema
+3. Inserts test data:
+   - 8 users (all password: `icl2026`)
+   - 30 clients
+   - 20 origin locations
+   - 20 via locations
+   - 200 quotations
+
+### Seed User Accounts
+
+| Email | Name | Role | Password |
+|-------|------|------|----------|
+| admin@iclsa.com | Admin ICL | DIRECTOR | icl2026 |
+| mlopez@iclsa.com | Maria Lopez | GERENTE | icl2026 |
+| abosich@iclsa.com | Agustina Bosich | COMERCIAL | icl2026 |
+| bgonzalez@iclsa.com | Bruno Gonzalez | COMERCIAL | icl2026 |
+| dosman@iclsa.com | Diego Osman | COMERCIAL | icl2026 |
+| fmonserrat@iclsa.com | Federico Monserrat | COMERCIAL | icl2026 |
+| gbalena@iclsa.com | Gonzalo Balena | COMERCIAL | icl2026 |
+| ppascal@iclsa.com | Pablo Pascal | COMERCIAL | icl2026 |
+
+## Database Backups
+
+### Manual Backup
+
+<Steps>
+
+### Stop Application
+
+```bash
+pm2 stop icl-cotizaciones
+# or
+sudo systemctl stop icl-cotizaciones
+```
+
+### Create Backup
+
+```bash
+cp data/icl.db data/icl.db.backup.$(date +%Y%m%d_%H%M%S)
+cp data/icl.db-wal data/icl.db-wal.backup.$(date +%Y%m%d_%H%M%S)
+cp data/icl.db-shm data/icl.db-shm.backup.$(date +%Y%m%d_%H%M%S)
+```
+
+### Verify Backup
+
+```bash
+sqlite3 data/icl.db.backup.* "PRAGMA integrity_check;"
+```
+
+Expected: `ok`
+
+### Restart Application
+
+```bash
+pm2 start icl-cotizaciones
+```
+
+</Steps>
+
+### Automated Backups
+
+Create a backup script at `/usr/local/bin/backup-icl-db.sh`:
+
+```bash
+#!/bin/bash
+APP_DIR="/opt/iclapp"
+BACKUP_DIR="/backups/icl-cotizaciones"
+DATE=$(date +%Y%m%d_%H%M%S)
+RETENTION_DAYS=30
+
+mkdir -p "$BACKUP_DIR"
+
+# Create backup using SQLite VACUUM INTO (safe for WAL mode)
+sqlite3 "$APP_DIR/data/icl.db" "VACUUM INTO '$BACKUP_DIR/icl.db.$DATE';"
+
+# Compress backup
+gzip "$BACKUP_DIR/icl.db.$DATE"
+
+# Remove old backups
+find "$BACKUP_DIR" -name "icl.db.*.gz" -mtime +$RETENTION_DAYS -delete
+
+echo "Backup completed: icl.db.$DATE.gz"
+```
+
+Make executable:
+
+```bash
+sudo chmod +x /usr/local/bin/backup-icl-db.sh
+```
+
+Add to crontab (daily at 2 AM):
+
+```bash
+sudo crontab -e
+```
+
+Add line:
+
+```
+0 2 * * * /usr/local/bin/backup-icl-db.sh >> /var/log/icl-backup.log 2>&1
+```
+
+### Restore from Backup
+
+<Warning>
+  Restoring will overwrite current database. Make a backup first.
+</Warning>
+
+<Steps>
+
+### Stop Application
+
+```bash
+pm2 stop icl-cotizaciones
+```
+
+### Decompress Backup
+
+```bash
+gunzip -c /backups/icl-cotizaciones/icl.db.20260304_020000.gz > data/icl.db.restore
+```
+
+### Verify Integrity
+
+```bash
+sqlite3 data/icl.db.restore "PRAGMA integrity_check;"
+```
+
+### Replace Database
+
+```bash
+mv data/icl.db data/icl.db.old
+mv data/icl.db.restore data/icl.db
+rm -f data/icl.db-wal data/icl.db-shm
+```
+
+### Restart Application
+
+```bash
+pm2 start icl-cotizaciones
+```
+
+### Verify Restoration
+
+```bash
+sqlite3 data/icl.db "SELECT COUNT(*) FROM quotations;"
+```
+
+</Steps>
+
+## Database Maintenance
+
+### Optimize Database
+
+Run VACUUM to reclaim space and optimize performance:
+
+<Steps>
+
+### Stop Application
+
+```bash
+pm2 stop icl-cotizaciones
+```
+
+### Run VACUUM
+
+```bash
+sqlite3 data/icl.db "VACUUM;"
+```
+
+### Analyze Statistics
+
+```bash
+sqlite3 data/icl.db "ANALYZE;"
+```
+
+### Restart Application
+
+```bash
+pm2 start icl-cotizaciones
+```
+
+</Steps>
+
+### WAL Checkpoint
+
+Manually checkpoint WAL to main database:
+
+```bash
+sqlite3 data/icl.db "PRAGMA wal_checkpoint(TRUNCATE);"
+```
+
+### Check Database Size
+
+```bash
+du -h data/icl.db*
+```
+
+Example output:
+```
+5.2M    data/icl.db
+128K    data/icl.db-shm
+2.1M    data/icl.db-wal
+```
+
+### Verify Integrity
+
+Run integrity check:
+
+```bash
+sqlite3 data/icl.db "PRAGMA integrity_check;"
+```
+
+Expected: `ok`
+
+If errors found:
+
+```bash
+sqlite3 data/icl.db "PRAGMA integrity_check;"
+# If corruption detected, restore from backup
+```
+
+## Direct Database Access
+
+### Using SQLite CLI
+
+<Steps>
+
+### Open Database
+
+```bash
+sqlite3 data/icl.db
+```
+
+### Run Query
+
+```sql
+SELECT COUNT(*) FROM quotations WHERE status = 'SI';
+```
+
+### Export Results
+
+```sql
+.mode csv
+.output export.csv
+SELECT * FROM quotations WHERE date > '2026-01-01';
+.quit
+```
+
+</Steps>
+
+### Common Queries
+
+**Count quotations by status:**
+
+```sql
+SELECT status, COUNT(*) as count 
+FROM quotations 
+GROUP BY status;
+```
+
+**Find inactive users:**
+
+```sql
+SELECT id, full_name, email 
+FROM users 
+WHERE is_active = 0;
+```
+
+**List clients with no quotations:**
+
+```sql
+SELECT c.id, c.legal_name 
+FROM clients c
+LEFT JOIN quotations q ON c.id = q.client_id
+WHERE q.id IS NULL;
+```
+
+## Performance Tuning
+
+### Enable Query Profiling
+
+Log slow queries:
+
+```typescript
+// In src/db/index.ts
+sqlite.pragma("query_only = OFF");
+sqlite.function("log_query", (query) => {
+  console.log("[SQL]", query);
+});
+```
+
+### Add Indexes
+
+For frequently queried columns:
+
+```sql
+CREATE INDEX idx_quotations_client ON quotations(client_id);
+CREATE INDEX idx_quotations_status ON quotations(status);
+CREATE INDEX idx_quotations_date ON quotations(date);
+CREATE INDEX idx_quotations_user ON quotations(user_id);
+```
+
+### Configure WAL Settings
+
+Optimize WAL performance:
+
+```typescript
+sqlite.pragma("wal_autocheckpoint = 1000");
+sqlite.pragma("journal_size_limit = 67108864"); // 64MB
+```
+
+## Troubleshooting
+
+For database-related issues, see [Troubleshooting Guide](/operations/troubleshooting#database-errors).

@@ -1,0 +1,776 @@
+---
+title: Installation
+description: Complete setup guide for development and production environments
+---
+
+## Overview
+
+This guide covers installation and configuration for both development and production environments. ICL Cotizaciones is a Next.js 16 application using SQLite as its database, making it straightforward to deploy as a single-server application.
+
+<Note>
+  For a quick local setup, see the [Quickstart](/quickstart) guide. This guide covers production-ready deployment.
+</Note>
+
+## System Requirements
+
+### Hardware
+
+- **CPU**: 2+ cores recommended
+- **RAM**: 2GB minimum, 4GB recommended
+- **Storage**: 10GB minimum (database grows with quotation volume)
+- **Network**: Static IP or domain name for production
+
+### Software
+
+- **Node.js**: 18.0 or higher (20.x LTS recommended)
+- **npm**: 9.0 or higher
+- **Build Tools**: Required for native module compilation
+  - macOS: Xcode Command Line Tools
+  - Linux: build-essential, python3
+  - Windows: Visual Studio Build Tools
+
+<Steps>
+  <Step title="Clone Repository">
+    Get the source code:
+
+    ```bash
+    git clone <repository-url> iclapp
+    cd iclapp
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all required npm packages:
+
+    ```bash
+    npm install
+    ```
+
+    **Key Dependencies:**
+
+    <CodeGroup>
+    ```json package.json - Framework & Core
+    {
+      "dependencies": {
+        "next": "^16.1.6",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "drizzle-orm": "^0.45.1",
+        "better-sqlite3": "^12.6.2",
+        "iron-session": "^8.0.4",
+        "bcryptjs": "^3.0.3"
+      }
+    }
+    ```
+
+    ```json package.json - UI Components
+    {
+      "dependencies": {
+        "@radix-ui/react-avatar": "^1.1.11",
+        "@radix-ui/react-dialog": "^1.1.15",
+        "@radix-ui/react-dropdown-menu": "^2.1.16",
+        "@radix-ui/react-select": "^2.2.6",
+        "@tanstack/react-table": "^8.21.3",
+        "lucide-react": "^0.564.0",
+        "recharts": "^3.7.0"
+      }
+    }
+    ```
+
+    ```json package.json - Styling
+    {
+      "dependencies": {
+        "tailwindcss": "^4.1.18",
+        "@tailwindcss/postcss": "^4.1.18",
+        "class-variance-authority": "^0.7.1",
+        "clsx": "^2.1.1",
+        "tailwind-merge": "^3.4.1"
+      }
+    }
+    ```
+    </CodeGroup>
+
+    <Warning>
+      `better-sqlite3` is a native Node.js addon that requires compilation during install. Ensure build tools are available.
+    </Warning>
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    Create a `.env.local` file in the project root:
+
+    ```bash .env.local
+    # Session Configuration
+    SESSION_SECRET="your-secret-key-at-least-32-characters-long-change-this-in-production"
+    SESSION_SECURE=false  # Set to true in production with HTTPS
+
+    # Database Configuration
+    DATABASE_PATH="./data/icl.db"
+
+    # Server Configuration
+    PORT=3000
+    NODE_ENV=development
+    ```
+
+    <Warning>
+      **Critical Security Settings:**
+      
+      The default session secret in `src/lib/session.ts` is:
+      ```typescript
+      password: "icl-secret-key-at-least-32-characters-long!!"
+      ```
+      
+      This **must** be changed in production via the `SESSION_SECRET` environment variable. Generate a secure key:
+      ```bash
+      node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+      ```
+    </Warning>
+
+    **Environment Variable Reference:**
+
+    | Variable | Description | Default | Required |
+    |----------|-------------|---------|----------|
+    | `SESSION_SECRET` | Iron-session encryption key | Hardcoded | Yes (production) |
+    | `SESSION_SECURE` | Enable HTTPS-only cookies | `false` | Yes (production) |
+    | `DATABASE_PATH` | SQLite database file location | `./data/icl.db` | No |
+    | `PORT` | HTTP server port | `3000` | No |
+    | `NODE_ENV` | Environment (development/production) | `development` | No |
+  </Step>
+
+  <Step title="Initialize Database">
+    Create the database directory and initialize schema:
+
+    ```bash
+    # Create data directory
+    mkdir -p data
+
+    # Generate Drizzle schema
+    npm run db:generate
+
+    # Run migrations (creates tables)
+    npm run db:migrate
+
+    # Seed with sample data (optional for development)
+    npm run db:seed
+    ```
+
+    **Database Schema:**
+
+    The schema is defined in `src/db/schema.ts`:
+
+    <CodeGroup>
+    ```typescript src/db/schema.ts - Users
+    export const users = sqliteTable("users", {
+      id: integer("id").primaryKey({ autoIncrement: true }),
+      full_name: text("full_name").notNull(),
+      email: text("email").notNull().unique(),
+      password: text("password").notNull(),
+      role: text("role", { 
+        enum: ["DIRECTOR", "GERENTE", "COMERCIAL", 
+               "CSV", "OPERACIONES", "ADMINISTRACION"] 
+      }).notNull(),
+      is_active: integer("is_active", { mode: "boolean" })
+        .notNull().default(true),
+      dni: text("dni"),
+      created_at: text("created_at").notNull()
+        .default("(datetime('now'))"),
+      updated_at: text("updated_at").notNull()
+        .default("(datetime('now'))"),
+    });
+    ```
+
+    ```typescript src/db/schema.ts - Clients
+    export const clients = sqliteTable("clients", {
+      id: integer("id").primaryKey({ autoIncrement: true }),
+      legal_name: text("legal_name").notNull(),
+      tax_id: text("tax_id"),
+      phone: text("phone"),
+      email: text("email"),
+      client_type: text("client_type", { 
+        enum: ["FFWW", "Final", "Both"] 
+      }).notNull().default("FFWW"),
+      user_id: integer("user_id").references(() => users.id),
+      is_active: integer("is_active", { mode: "boolean" })
+        .notNull().default(true),
+      created_at: text("created_at").notNull()
+        .default("(datetime('now'))"),
+      updated_at: text("updated_at").notNull()
+        .default("(datetime('now'))"),
+    });
+    ```
+
+    ```typescript src/db/schema.ts - Quotations
+    export const quotations = sqliteTable("quotations", {
+      id: integer("id").primaryKey({ autoIncrement: true }),
+      quote_number: text("quote_number").notNull().unique(),
+      date: text("date").notNull(),
+      time: text("time"),
+      impo_expo: text("impo_expo", { 
+        enum: ["IMPO", "EXPO"] 
+      }).notNull().default("IMPO"),
+      tipo: text("tipo"),
+      load_type: text("load_type", { 
+        enum: ["FCL", "LCL"] 
+      }).notNull().default("LCL"),
+      sale_condition: text("sale_condition"),
+      client_id: integer("client_id").references(() => clients.id),
+      origin_id: integer("origin_id").references(() => locations.id),
+      via_id: integer("via_id").references(() => locations.id),
+      end_client: text("end_client"),
+      kgs: real("kgs"),
+      billable_cbm: real("billable_cbm"),
+      actual_cbm: real("actual_cbm"),
+      description: text("description"),
+      currency: text("currency", { 
+        enum: ["USD", "EUR", "ARS"] 
+      }).notNull().default("USD"),
+      freight_net: real("freight_net"),
+      freight_sale: real("freight_sale"),
+      status: text("status", { 
+        enum: ["SI", "NO", "PEND", "ENCOTIZACION", "PEND A/C"] 
+      }).notNull().default("ENCOTIZACION"),
+      profit: real("profit"),
+      month: integer("month"),
+      year: integer("year"),
+      week: integer("week"),
+      user_id: integer("user_id").references(() => users.id),
+    });
+    ```
+    </CodeGroup>
+
+    **SQLite Configuration:**
+
+    The database connection in `src/db/index.ts` uses:
+    ```typescript
+    import Database from "better-sqlite3";
+    
+    const dbPath = path.join(process.cwd(), "data", "icl.db");
+    const sqlite = new Database(dbPath);
+    
+    // Enable WAL mode for concurrent reads
+    sqlite.pragma("journal_mode = WAL");
+    
+    // Enable foreign key constraints
+    sqlite.pragma("foreign_keys = ON");
+    ```
+
+    <Note>
+      WAL (Write-Ahead Logging) mode allows multiple concurrent readers while a write is in progress, improving performance.
+    </Note>
+  </Step>
+
+  <Step title="Create Initial Admin User">
+    If you didn't run `db:seed`, create an admin user manually:
+
+    ```typescript
+    // Create a script: scripts/create-admin.ts
+    import { db } from "@/db";
+    import { users } from "@/db/schema";
+    import { hashSync } from "bcryptjs";
+
+    const hashedPassword = hashSync("your-secure-password", 10);
+
+    db.insert(users).values({
+      full_name: "System Administrator",
+      email: "admin@yourcompany.com",
+      password: hashedPassword,
+      role: "DIRECTOR",
+      is_active: true,
+    });
+
+    console.log("Admin user created");
+    ```
+
+    Run it:
+    ```bash
+    tsx scripts/create-admin.ts
+    ```
+
+    <Warning>
+      Store admin credentials securely. Never commit passwords to version control.
+    </Warning>
+  </Step>
+
+  <Step title="Development Server">
+    Start the development server:
+
+    ```bash
+    npm run dev
+    ```
+
+    The application runs on `http://localhost:3000` with:
+    - Hot module replacement
+    - Turbopack for fast builds
+    - Detailed error overlay
+
+    **Available Scripts:**
+
+    ```json package.json
+    {
+      "scripts": {
+        "dev": "next dev --turbopack",
+        "build": "next build",
+        "start": "next start",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:seed": "tsx src/db/seed.ts"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Production Deployment
+
+### Build for Production
+
+<Steps>
+  <Step title="Build Application">
+    Create an optimized production build:
+
+    ```bash
+    npm run build
+    ```
+
+    This generates:
+    - Optimized JavaScript bundles
+    - Server-side rendering configuration
+    - Static assets
+    - Production API routes
+
+    Output:
+    ```
+    Route (app)                              Size     First Load JS
+    ┌ ○ /                                    142 B          87.9 kB
+    ├ ○ /login                               142 B          87.9 kB
+    └ ƒ /cotizaciones                        5.2 kB         93.1 kB
+    ```
+  </Step>
+
+  <Step title="Start Production Server">
+    Run the production server:
+
+    ```bash
+    npm run start
+    ```
+
+    Or with custom port:
+    ```bash
+    PORT=8080 npm run start
+    ```
+  </Step>
+</Steps>
+
+### Process Management
+
+#### Using PM2 (Recommended)
+
+```bash
+# Install PM2 globally
+npm install -g pm2
+
+# Start application
+pm2 start npm --name "iclapp" -- start
+
+# Enable startup on boot
+pm2 startup
+pm2 save
+
+# Monitor
+pm2 logs iclapp
+pm2 monit
+```
+
+**PM2 Ecosystem File:**
+
+```javascript ecosystem.config.js
+module.exports = {
+  apps: [{
+    name: 'iclapp',
+    script: 'npm',
+    args: 'start',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000,
+      SESSION_SECRET: process.env.SESSION_SECRET,
+      SESSION_SECURE: 'true',
+    },
+    instances: 1,
+    exec_mode: 'fork',
+    max_memory_restart: '1G',
+    error_file: './logs/err.log',
+    out_file: './logs/out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+  }]
+};
+```
+
+Start with ecosystem file:
+```bash
+pm2 start ecosystem.config.js
+```
+
+#### Using systemd
+
+```ini /etc/systemd/system/iclapp.service
+[Unit]
+Description=ICL Cotizaciones
+After=network.target
+
+[Service]
+Type=simple
+User=iclapp
+WorkingDirectory=/opt/iclapp
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="SESSION_SECRET=your-secret-key"
+Environment="SESSION_SECURE=true"
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl enable iclapp
+sudo systemctl start iclapp
+sudo systemctl status iclapp
+```
+
+### Reverse Proxy Configuration
+
+#### nginx
+
+```nginx /etc/nginx/sites-available/iclapp
+server {
+    listen 80;
+    listen [::]:80;
+    server_name cotizaciones.yourcompany.com;
+
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name cotizaciones.yourcompany.com;
+
+    # SSL Configuration
+    ssl_certificate /etc/letsencrypt/live/yourcompany.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourcompany.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Proxy to Next.js
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Client body size limit (for file uploads)
+    client_max_body_size 10M;
+}
+```
+
+Enable site:
+```bash
+sudo ln -s /etc/nginx/sites-available/iclapp /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+#### Caddy
+
+```caddyfile Caddyfile
+cotizaciones.yourcompany.com {
+    reverse_proxy localhost:3000
+    encode gzip
+    
+    # Automatic HTTPS with Let's Encrypt
+    tls you@yourcompany.com
+}
+```
+
+Start Caddy:
+```bash
+caddy run --config Caddyfile
+```
+
+### Database Backup Strategy
+
+<Warning>
+  SQLite databases can become corrupted if not backed up properly. Always use WAL mode and proper backup procedures.
+</Warning>
+
+**Automated Backup Script:**
+
+```bash scripts/backup-db.sh
+#!/bin/bash
+set -e
+
+# Configuration
+DB_PATH="./data/icl.db"
+BACKUP_DIR="./backups"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_FILE="${BACKUP_DIR}/icl_${TIMESTAMP}.db"
+
+# Create backup directory
+mkdir -p "${BACKUP_DIR}"
+
+# SQLite online backup (safe while app is running)
+sqlite3 "${DB_PATH}" ".backup '${BACKUP_FILE}'"
+
+# Compress
+gzip "${BACKUP_FILE}"
+
+# Delete backups older than 30 days
+find "${BACKUP_DIR}" -name "icl_*.db.gz" -mtime +30 -delete
+
+echo "Backup completed: ${BACKUP_FILE}.gz"
+```
+
+Make executable and schedule:
+```bash
+chmod +x scripts/backup-db.sh
+
+# Add to crontab (daily at 2 AM)
+crontab -e
+0 2 * * * /opt/iclapp/scripts/backup-db.sh >> /var/log/iclapp-backup.log 2>&1
+```
+
+### Monitoring & Logging
+
+#### Application Logs
+
+Next.js logs to stdout/stderr by default. Capture with PM2 or systemd.
+
+#### Database Monitoring
+
+```bash
+# Check database size
+du -h data/icl.db
+
+# Check WAL size (should be small, auto-checkpointed)
+du -h data/icl.db-wal
+
+# Vacuum database (optimize, run during low traffic)
+sqlite3 data/icl.db "VACUUM;"
+```
+
+#### Health Check Endpoint
+
+Create `src/app/api/health/route.ts`:
+
+```typescript
+import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
+
+export async function GET() {
+  try {
+    // Test database connection
+    const result = db.select(sql`1 as ok`).get();
+    
+    return NextResponse.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      database: result ? "connected" : "disconnected",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { 
+        status: "unhealthy", 
+        error: String(error) 
+      },
+      { status: 503 }
+    );
+  }
+}
+```
+
+Monitor with:
+```bash
+curl http://localhost:3000/api/health
+```
+
+## Security Hardening
+
+<CardGroup cols={2}>
+  <Card title="Session Security" icon="lock">
+    - Change `SESSION_SECRET` to 32+ character random string
+    - Enable `SESSION_SECURE=true` with HTTPS
+    - Set `httpOnly: true` for cookies (default)
+    - Consider shorter session TTL for sensitive data
+  </Card>
+
+  <Card title="Database Security" icon="database">
+    - Restrict file permissions: `chmod 600 data/icl.db`
+    - Run application as non-root user
+    - Enable foreign key constraints (default)
+    - Regular backups with encryption
+  </Card>
+
+  <Card title="Network Security" icon="network-wired">
+    - Always use HTTPS in production
+    - Configure firewall (only 80/443 exposed)
+    - Use reverse proxy for rate limiting
+    - Enable CORS if needed (API only)
+  </Card>
+
+  <Card title="Application Security" icon="shield">
+    - Keep dependencies updated: `npm audit`
+    - Use environment variables for secrets
+    - Implement CSRF protection (Next.js default)
+    - Regular security audits
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Database locked errors">
+    SQLite in WAL mode should prevent most locks. If issues persist:
+
+    ```bash
+    # Check for stale locks
+    lsof data/icl.db
+
+    # Kill stale processes
+    # Stop app, remove WAL files, restart
+    rm data/icl.db-wal data/icl.db-shm
+    ```
+  </Accordion>
+
+  <Accordion title="Memory leaks">
+    Monitor with PM2:
+    ```bash
+    pm2 monit
+
+    # Restart if memory exceeds threshold
+    pm2 restart iclapp
+    ```
+
+    Check for:
+    - Unclosed database connections
+    - Memory-intensive queries
+    - Large result sets not paginated
+  </Accordion>
+
+  <Accordion title="Session not persisting">
+    Verify:
+    - Cookie is HTTP-only and secure matches protocol
+    - Domain matches your deployment URL
+    - Session secret is set correctly
+    - Browser accepts cookies
+
+    Debug:
+    ```typescript
+    // Check session in API route
+    const session = await getSession();
+    console.log('Session:', session);
+    ```
+  </Accordion>
+
+  <Accordion title="Build fails with native module error">
+    `better-sqlite3` requires build tools:
+
+    **Ubuntu/Debian:**
+    ```bash
+    sudo apt-get install build-essential python3
+    npm rebuild better-sqlite3
+    ```
+
+    **CentOS/RHEL:**
+    ```bash
+    sudo yum groupinstall "Development Tools"
+    npm rebuild better-sqlite3
+    ```
+
+    **Alpine Linux (Docker):**
+    ```dockerfile
+    RUN apk add --no-cache python3 make g++
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Performance Optimization
+
+### Database Indexes
+
+Add indexes for common queries:
+
+```sql
+-- Index quotation queries by date and status
+CREATE INDEX idx_quotations_date ON quotations(date);
+CREATE INDEX idx_quotations_status ON quotations(status);
+CREATE INDEX idx_quotations_user_id ON quotations(user_id);
+
+-- Index client lookups
+CREATE INDEX idx_clients_user_id ON clients(user_id);
+CREATE INDEX idx_clients_legal_name ON clients(legal_name);
+
+-- Composite index for filtered queries
+CREATE INDEX idx_quotations_user_status_date 
+  ON quotations(user_id, status, date);
+```
+
+### Caching Strategy
+
+Implement Next.js caching for static data:
+
+```typescript
+// Cache location data (rarely changes)
+export const revalidate = 3600; // 1 hour
+
+export async function GET() {
+  const locations = await db.select().from(locations);
+  return NextResponse.json(locations);
+}
+```
+
+### Connection Pooling
+
+For high-traffic deployments, consider connection pooling:
+
+```typescript
+// src/db/index.ts
+import Database from "better-sqlite3";
+
+const pool = [
+  new Database(dbPath, { readonly: true }),
+  new Database(dbPath, { readonly: true }),
+  new Database(dbPath, { readonly: true }),
+];
+
+let currentIndex = 0;
+
+export function getReadConnection() {
+  currentIndex = (currentIndex + 1) % pool.length;
+  return pool[currentIndex];
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Create your first quotation
+  </Card>
+  <Card title="User Management" icon="users" href="/guides/user-roles">
+    Set up user roles and permissions
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/auth/login">
+    Explore the REST API
+  </Card>
+  <Card title="Backup & Recovery" icon="database" href="/operations/database-management">
+    Database backup best practices
+  </Card>
+</CardGroup>

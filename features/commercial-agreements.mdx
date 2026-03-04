@@ -1,0 +1,268 @@
+---
+title: Commercial Agreements
+description: Configure client-specific pricing terms, fees, and commercial conditions
+---
+
+## Overview
+
+Commercial agreements define the negotiated terms between ICL and each FFWW client, including fiscal deposit fees, deconsolidation rates, insurance terms, and commission structures. These agreements automatically populate relevant costs when creating quotations.
+
+## Agreement Structure
+
+Each commercial agreement is linked to a **single FFWW client** and can optionally reference a specific **end client** for triangular relationships.
+
+<Note>
+Clients with `client_type = "Both"` can have agreements as both FFWW and end client.
+</Note>
+
+## Creating a Commercial Agreement
+
+<Steps>
+  <Step title="Access agreements">
+    Navigate to **Maestros → Acuerdos Comerciales** or use the **Acuerdo Comercial** tab when creating/editing a client.
+  </Step>
+  
+  <Step title="Select client relationship">
+    - **Cliente**: Primary FFWW client (required)
+    - **Cliente Final** or **Cliente FFWW**: Conditional field based on client type
+      - If primary client is FFWW → Select a Final or Both client
+      - If primary client is Final → Select a FFWW or Both client
+      - If primary client is Both → Field hidden (no linking)
+  </Step>
+  
+  <Step title="Configure rate schedules">
+    - **Tarifario**: Rate schedule reference code
+    - **Tarifario Fiscal**: Fiscal rate schedule
+    - **Moneda**: Agreement currency (USD, EUR, ARS)
+  </Step>
+  
+  <Step title="Set deconsolidation terms">
+    **Deconsolidation Rates**
+    - **W/M**: Weight/measurement rate type
+    - **Min**: Minimum charge
+    - **Max**: Maximum charge
+    - **Notas**: Deconsolidation notes
+  </Step>
+  
+  <Step title="Define fiscal deposit fees">
+    - **AGP/Tn**: Agricultural inspection fee per ton
+    - **Manejo Documentos**: Document handling fee
+    - **Log Fee**: Logistics fee
+    - **Doc Fee**: Documentation fee
+    - **Certflete**: Freight certificate fee
+  </Step>
+  
+  <Step title="Configure insurance terms">
+    - **Seguro %**: Insurance percentage of cargo value
+    - **Seguro Min**: Minimum insurance charge
+  </Step>
+  
+  <Step title="Set other fees">
+    - **Emision BL**: Bill of lading emission fee
+  </Step>
+  
+  <Step title="Define commercial terms">
+    - **Plazo de Pago**: Payment terms (e.g., "Net 30", "Immediate")
+    - **Maximo Descontar**: Maximum discount percentage allowed
+    - **Comision**: Commission percentage
+    - **Incentivo**: Incentive percentage
+  </Step>
+  
+  <Step title="Add notes and metadata">
+    - **Datos a Cotizar**: Quote data reference
+    - **Observaciones**: General notes
+    - **Vendedor**: Sales representative managing this agreement
+    - **Ultima Modificacion**: Last modified date (auto-updated)
+  </Step>
+  
+  <Step title="Save agreement">
+    Click **Guardar** to create or update the commercial agreement.
+  </Step>
+</Steps>
+
+## Agreement Display in Quotations
+
+When you select a FFWW client in a quotation, the system:
+
+1. Queries `GET /api/acuerdos?cliente_id={id}`
+2. If agreement found, displays **Gastos en Deposito Fiscal** section
+3. Shows all fee fields in read-only format
+4. If not found, displays: _"Sin acuerdo comercial para este cliente"_
+
+Source: src/components/cotizaciones/cotizacion-form.tsx:235-252
+
+### Displayed Fields
+
+<CardGroup cols={3}>
+  <Card title="Deconsolidation">
+    - W/M rate type
+    - Min charge
+    - Max charge
+  </Card>
+  
+  <Card title="Processing Fees">
+    - AGP/Tn
+    - Document handling
+    - Log fee
+    - Doc fee
+  </Card>
+  
+  <Card title="Additional Charges">
+    - Freight certificate
+    - Insurance % and min
+    - BL emission
+  </Card>
+</CardGroup>
+
+Observations appear full-width below the fee grid if present.
+
+## Client Type Conditional Logic
+
+The **first field** in the agreement form adapts based on the primary client's type:
+
+| Primary Client Type | Field Label | Available Options |
+|---------------------|-------------|------------------|
+| FFWW | "Cliente Final" | Clients with `client_type = Final` or `Both` |
+| Final | "Cliente FFWW" | Clients with `client_type = FFWW` or `Both` |
+| Both | *(field hidden)* | N/A |
+
+The combobox uses `legal_name` as the stored value (not `id`).
+
+Source: docs/flows/07-gestion-maestros.md:49-60
+
+## Agreement Management Page
+
+The Acuerdos Comerciales master page displays agreements in a grouped table:
+
+### Table Columns
+
+- **Cliente**: Primary FFWW client name
+- **Cliente Final**: End client reference (if applicable)
+- **Vendedor**: Sales representative
+- **Tarifario**: Rate schedule code
+- **Moneda**: Agreement currency
+- **Deconsolidado**: W/M, Min, Max values
+- **Fees**: AGP, Doc handling, Log fee, Doc fee
+- **Seguro**: Insurance % and minimum
+- **Plazo Pago**: Payment terms
+- **Comision/Incentivo**: Commercial percentages
+- **Ultima Mod**: Last modification date
+
+### Filter Options
+
+- **Search**: Filter by client name, end client, or rate schedule
+- **Cliente**: Multi-select client filter
+- **Vendedor**: Filter by sales representative
+- **Moneda**: Currency filter
+
+### Actions
+
+- **Nuevo Acuerdo**: Create new agreement
+- **Edit**: Modify agreement details
+- **Delete**: Remove agreement (admin only)
+
+## Access Control
+
+| Operation | Admin | Commercial User |
+|-----------|-------|----------------|
+| View agreements | ✓ | ✓ (all) |
+| Create agreement | ✓ | ✗ (403) |
+| Edit agreement | ✓ | ✗ (403) |
+| Delete agreement | ✓ | ✗ (403) |
+| View in quotation | ✓ | ✓ (read-only) |
+
+<Note>
+All users can view agreements in quotations, but only admins can create/modify them in the Maestros section.
+</Note>
+
+## Data Model Reference
+
+From `commercial_agreements` table (src/db/schema.ts:37-66):
+
+```typescript
+commercial_agreements {
+  id: integer (PK)
+  client_id: integer (FK → clients)
+  end_client: text // Cliente final name (not FK)
+  rate_schedule: text
+  deconsolidation_wm: text
+  deconsolidation_min: real
+  deconsolidation_max: real
+  deconsolidation_notes: text
+  agp_per_ton: real
+  document_handling: real
+  log_fee: real
+  doc_fee: real
+  freight_cert: real
+  insurance_pct: real
+  insurance_min: real
+  bl_emission: real
+  payment_terms: text
+  max_discount: real
+  commission: real
+  incentive: real
+  quote_data: text
+  notes: text
+  user_id: integer (FK → users) // Vendedor
+  last_modified: text
+  fiscal_rate_schedule: text
+  currency: "USD" | "EUR" | "ARS" (default: "USD")
+  created_at: text
+  updated_at: text
+}
+```
+
+## API Endpoints
+
+- `GET /api/acuerdos` - List all agreements (supports `?cliente_id=X` filter)
+- `POST /api/acuerdos` - Create new agreement (admin only)
+- `GET /api/acuerdos/[id]` - Get agreement details
+- `PUT /api/acuerdos/[id]` - Update agreement (admin only)
+- `DELETE /api/acuerdos/[id]` - Delete agreement (admin only)
+
+## Agreement Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Currency Consistency" icon="dollar-sign">
+    Set agreement currency to match the primary currency used in quotations for this client to avoid conversion complexity.
+  </Card>
+  
+  <Card title="Rate Schedule Codes" icon="hashtag">
+    Use consistent naming conventions for Tarifario codes (e.g., "2024-Q1-ASIA", "STD-EUR-2026") to enable easy filtering and reporting.
+  </Card>
+  
+  <Card title="Fee Structure" icon="calculator">
+    - Leave fees as `null` if not applicable rather than setting to 0
+    - This distinction helps identify services that don't apply vs. waived fees
+  </Card>
+  
+  <Card title="Documentation" icon="file-text">
+    Use **Observaciones** field to note special conditions, validity periods, or exceptions to standard terms.
+  </Card>
+</CardGroup>
+
+## Common Use Cases
+
+### Volume-Based Deconsolidation
+
+```
+W/M: "Per CBM"
+Min: 150 (minimum charge)
+Max: 2500 (cap per shipment)
+```
+
+### Insurance Terms
+
+```
+Seguro %: 0.5 (0.5% of cargo value)
+Seguro Min: 25 (minimum $25 charge)
+```
+
+### Payment and Commission
+
+```
+Plazo de Pago: "Net 30 days"
+Comision: 2.5 (2.5% commission)
+Incentivo: 1.0 (1% incentive on targets)
+Maximo Descontar: 5 (max 5% discount allowed)
+```

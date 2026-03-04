@@ -1,0 +1,313 @@
+---
+title: Creating Quotations
+description: Step-by-step guide to creating freight quotations in ICL Cotizaciones
+---
+
+This guide walks you through creating a new freight quotation from start to finish. The quotation form captures all details needed to price maritime and air freight services.
+
+## Before You Begin
+
+Make sure you have:
+- Client information (the client must exist in the system)
+- Origin and destination details
+- Cargo specifications (weight, volume, dimensions)
+- Freight rates or access to pricing tables
+
+<Info>
+Quotations are automatically numbered using the format `COT-YYMM-NNNN` where YY is the year, MM is the month, and NNNN is a sequential number. The system previews the next available number when you open the form.
+</Info>
+
+## Creating a New Quotation
+
+<Steps>
+  <Step title="Navigate to the quotations page">
+    From the sidebar, click **Cotizaciones**. Then click the **Nueva Cotización** button in the top right.
+  </Step>
+  
+  <Step title="Fill in basic information">
+    The form opens with default values. Start by updating:
+    
+    **Fecha** - Quotation date (defaults to today)
+    
+    **Hora** - Time (defaults to current time)
+    
+    **Comercial** - Sales representative
+    - For Comercial/Operaciones roles: This is pre-filled with your name and cannot be changed
+    - For admin roles: Select the sales representative who will own this quotation
+    
+    The quotation number preview appears at the top showing the next available number (e.g., `COT-2603-0045`).
+  </Step>
+  
+  <Step title="Select the operation type">
+    Under the **Operación** section:
+    
+    **Impo / Expo** - Select:
+    - `IMPO` - Import operation
+    - `EXPO` - Export operation
+    
+    **Tipo** - Service type:
+    - `MARITIMO` - Sea freight
+    - `AEREO` - Air freight
+    
+    **FCL / LCL** - Load type:
+    - `FCL` - Full Container Load (20', 40', 40'HQ)
+    - `LCL` - Less than Container Load (consolidated)
+    
+    **Cond. Venta** - Sale condition:
+    - `FOB` - Free on Board
+    - `FCA` - Free Carrier
+    - `EXW` - Ex Works
+    - `CIF` - Cost Insurance Freight
+    - `CFR` - Cost and Freight
+    - `DDP` - Delivered Duty Paid
+  </Step>
+  
+  <Step title="Select client and route">
+    **Cliente FFWW** - Select the freight forwarder or direct client
+    - Start typing to search by company name
+    - Click the magnifying glass to create a new client if needed
+    
+    <Note>
+    When you select a client with an existing commercial agreement, the system automatically loads agreement terms and displays them in the "Gastos en Depósito Fiscal" section below.
+    </Note>
+    
+    **Cliente Final** (Optional) - Select the end customer if different from the FFWW client
+    
+    **Origen** - Port or city of origin
+    
+    **Vía** - Destination port or city
+  </Step>
+  
+  <Step title="Enter cargo details">
+    In the **Carga** section:
+    
+    **KGS** - Total weight in kilograms (required)
+    
+    **CBM Facturables** - Billable cubic meters (optional - for invoicing reference)
+    
+    **CBM Reales** - Actual cubic meters (required)
+    
+    <Tip>
+    When you enter CBM Reales for an LCL shipment, the system automatically suggests a freight rate from the base port tariff table if available. You'll see a hint below the Flete Neto field showing the suggested rate.
+    </Tip>
+    
+    **Detalle** - Cargo description (e.g., "Auto parts - cartons")
+    
+    **IMO** - Dangerous goods:
+    - `NO` - General cargo
+    - `SI` - IMO/Dangerous goods
+    
+    **Apilable** - Stackable:
+    - `SI` - Can be stacked
+    - `NO` - Cannot be stacked
+    
+    **Domicilio de Retiro** - Pickup address for FCA/EXW shipments (optional)
+  </Step>
+  
+  <Step title="Enter pricing - Origin costs">
+    In the **Gastos de Origen** section:
+    
+    **Moneda** - Select currency:
+    - `USD` - US Dollars
+    - `EUR` - Euros
+    - `ARS` - Argentine Pesos
+    
+    **Gastos Origen Neto** - Net origin costs (required for FCA/EXW sale conditions)
+    
+    **Gastos Origen Venta** - Sales price for origin costs
+    
+    <Info>
+    Origin costs are only required when the sale condition is FCA or EXW. For FOB and other conditions, these fields are optional.
+    </Info>
+  </Step>
+  
+  <Step title="Enter pricing - Freight costs">
+    In the **Flete** section:
+    
+    **Flete Neto** - Net freight cost (required)
+    - For LCL shipments with a Via selected, the system suggests a rate from the tariff table
+    - You can override the suggestion with your actual negotiated rate
+    
+    **Tipo FN** - Net freight type:
+    - `W/M` - Weight or Measurement (whichever is greater)
+    - `Por Embarque` - Flat rate per shipment
+    - `Por KG` - Rate per kilogram
+    - `Por CBM` - Rate per cubic meter
+    - `Por Contenedor` - Rate per container
+    
+    **Flete Venta** - Sales price for freight (optional)
+    
+    **Tipo FV** - Sales freight type (same options as Tipo FN)
+    
+    The system automatically calculates **Ganancia** (Profit) as:
+    ```
+    Profit = (Flete Venta - Flete Neto) + (Gastos Origen Venta - Gastos Origen Neto)
+    ```
+  </Step>
+  
+  <Step title="Set quotation status">
+    **Cerrada** - Quotation status:
+    - `ENCOTIZACION` - In quotation (default for new quotes)
+    - `PEND` - Pending client response
+    - `SI` - Won/Confirmed
+    - `NO` - Lost
+    - `PEND A/C` - Pending approval
+    
+    When you change status to `SI`, `NO`, or `PEND A/C`, the **Fecha de Cierre** (close date) automatically populates with today's date. You can modify it if needed.
+    
+    **Orden de Venta** - Sales order number (optional - fill when status is SI)
+  </Step>
+  
+  <Step title="Add additional information">
+    **Validez de Tarifa** - Rate validity date (optional)
+    
+    **Referencia** - Reference number or text (optional)
+    
+    **Observaciones** - Internal notes (optional)
+  </Step>
+  
+  <Step title="Review commercial agreement">
+    If the selected client has a commercial agreement, review the **Gastos en Depósito Fiscal** section showing:
+    - Deconsolidation rates (W/M, min, max)
+    - AGP per ton
+    - Document handling
+    - Log fee, Doc fee, Freight certificate
+    - Insurance percentage and minimum
+    - BL emission
+    - Payment terms
+    - Other agreement terms
+    
+    <Note>
+    These values are read-only in the quotation form. To modify them, go to Maestros → Clientes and edit the client's commercial agreement.
+    </Note>
+  </Step>
+  
+  <Step title="Save the quotation">
+    Click the **Guardar** button in the sticky toolbar at the bottom of the form.
+    
+    The system validates required fields:
+    - If any required field is empty, you'll see an error message and the form will scroll to the first invalid field
+    - If validation passes, the quotation is created and you're redirected to the quotations list
+    
+    The new quotation appears with its assigned quote number (e.g., `COT-2603-0045`).
+  </Step>
+</Steps>
+
+## Field Validation
+
+The following fields are **required** and will prevent saving if empty:
+
+| Field | Section | Notes |
+|-------|---------|-------|
+| Fecha | Basic Information | Quotation date |
+| Comercial | Basic Information | Auto-filled for non-admin users |
+| Cliente FFWW | Ruta | Client selection |
+| Impo / Expo | Operación | Import or Export |
+| Tipo | Operación | Service type |
+| FCL / LCL | Operación | Load type |
+| Cond. Venta | Operación | Sale condition |
+| Moneda | Gastos de Origen | Currency |
+| Via | Ruta | Destination |
+| CBM Reales | Carga | Actual volume |
+| KGS | Carga | Weight |
+| Apilable | Carga | Stackable yes/no |
+| IMO | Carga | Dangerous goods yes/no |
+| Flete Neto | Flete | Net freight cost |
+| Tipo FN | Flete | Net freight type |
+| Gastos Origen Neto | Gastos de Origen | Required only for FCA/EXW |
+
+## Auto-Suggestions
+
+### Freight Rate Suggestion (LCL Only)
+
+When creating an LCL quotation, the system suggests freight rates based on:
+1. Selected **Vía** (destination port)
+2. **CBM Reales** (actual volume)
+
+Rate selection logic:
+- 0-3 CBM: Uses `rate_0_3_cbm`
+- 3-5 CBM: Uses `rate_3_5_cbm`
+- 5-10 CBM: Uses `rate_5_10_cbm`
+- 10+ CBM: Uses `rate_10_15_cbm`
+
+The suggested rate appears:
+- **New quotations**: Auto-fills the Flete Neto field
+- **Editing quotations**: Shows as a hint below the field without overwriting your existing value
+
+### Sales Representative Auto-Assignment
+
+For admin users creating a quotation:
+- When you select a **Cliente FFWW** that has an assigned sales representative
+- The **Comercial** field automatically populates with that representative
+- You can change it if needed
+
+### Close Date Auto-Fill
+
+When you change the **Cerrada** status to SI, NO, or PEND A/C:
+- **Fecha de Cierre** automatically fills with today's date
+- You can manually adjust the date if the actual close date was different
+
+When you change back to ENCOTIZACION or PEND:
+- **Fecha de Cierre** clears to null
+
+## Creating a Client During Quotation
+
+If you need to quote for a new client that doesn't exist yet:
+
+<Steps>
+  <Step title="Click create client">
+    In the Cliente FFWW combobox, click the **+ Crear cliente** option at the bottom.
+  </Step>
+  
+  <Step title="Form is saved to session">
+    Your current quotation data is automatically saved to browser session storage.
+  </Step>
+  
+  <Step title="Navigate to client form">
+    You're redirected to Maestros → Clientes with the new client dialog open.
+  </Step>
+  
+  <Step title="Create the client">
+    Fill in the client details and click **Crear registro**.
+  </Step>
+  
+  <Step title="Return to quotation">
+    You're automatically returned to the quotation form with:
+    - All your previously entered data restored
+    - The newly created client pre-selected in Cliente FFWW
+  </Step>
+</Steps>
+
+<Warning>
+This flow only works when creating a NEW quotation. When editing an existing quotation, use the back button to save changes first, then create the client separately.
+</Warning>
+
+## Tips for Faster Quotation Entry
+
+<Tip>
+**Use keyboard shortcuts**: Press `Tab` to move between fields quickly instead of clicking.
+</Tip>
+
+<Tip>
+**Set up pricing tables**: Maintain up-to-date pricing in Maestros → Pricing Netos to get automatic rate suggestions for LCL shipments.
+</Tip>
+
+<Tip>
+**Create complete commercial agreements**: When clients have detailed commercial agreements, you can reference them while completing the quotation without switching screens.
+</Tip>
+
+<Tip>
+**Duplicate similar quotes**: Use the duplicate feature (covered in the next guide) to copy a previous quotation and modify only the differences.
+</Tip>
+
+## Next Steps
+
+After creating a quotation:
+- **Preview and send to client**: Use the email preview feature to generate a PDF and send it
+- **Track status**: Update the Cerrada field as the quotation progresses through your sales pipeline
+- **Duplicate for similar shipments**: Create variations quickly using the duplicate feature
+- **View analytics**: Check your dashboard to see performance metrics
+
+<Card title="Related Guide" icon="arrow-right" href="./managing-clients">
+  Learn how to create and manage clients, including setting up commercial agreements
+</Card>

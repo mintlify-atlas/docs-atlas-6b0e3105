@@ -1,0 +1,366 @@
+---
+title: 'Dashboard Analytics'
+api: 'GET /api/dashboard'
+---
+
+Retrieves comprehensive analytics and statistics for quotations. Supports multiple report types for different dashboard views.
+
+## Query Parameters
+
+<ParamField query="tipo" type="string" optional default="general">
+  Type of analytics report to retrieve:
+  - `general` - Weekly/monthly stats, top clients, status breakdown
+  - `filtradas` - Filtered quotations with summary statistics
+  - `por-vendedor` - Sales performance by salesperson
+  - `contactos` - Client activity and engagement tracking
+</ParamField>
+
+<ParamField query="cliente_id" type="integer" optional>
+  Filter by client ID
+</ParamField>
+
+<ParamField query="vendedor_id" type="integer" optional>
+  Filter by salesperson user ID
+</ParamField>
+
+<ParamField query="fecha_desde" type="string" optional>
+  Filter from date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="fecha_hasta" type="string" optional>
+  Filter to date (YYYY-MM-DD)
+</ParamField>
+
+<ParamField query="estado" type="string" optional>
+  Filter by quote status (only for `tipo=filtradas`): SI, NO, PEND, ENCOTIZACION, PEND A/C
+</ParamField>
+
+<Note>
+  Non-admin users can only see their own quotations. Admin users (DIRECTOR, GERENTE) can see all quotations.
+</Note>
+
+## Response Types
+
+### General Dashboard (`tipo=general`)
+
+Provides high-level statistics broken down by time periods and client performance.
+
+<ResponseField name="porSemana" type="array">
+  Weekly statistics with total quotes, closed quotes, and profit
+  <Expandable title="properties">
+    <ResponseField name="semana" type="integer">Week number</ResponseField>
+    <ResponseField name="anio" type="integer">Year</ResponseField>
+    <ResponseField name="total" type="integer">Total quotations</ResponseField>
+    <ResponseField name="cerradas" type="integer">Closed quotations (status = SI)</ResponseField>
+    <ResponseField name="profit_total" type="number">Total profit from closed quotes</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="porMes" type="array">
+  Monthly statistics with total quotes, closed quotes, and profit
+  <Expandable title="properties">
+    <ResponseField name="mes" type="integer">Month number (1-12)</ResponseField>
+    <ResponseField name="anio" type="integer">Year</ResponseField>
+    <ResponseField name="total" type="integer">Total quotations</ResponseField>
+    <ResponseField name="cerradas" type="integer">Closed quotations</ResponseField>
+    <ResponseField name="profit_total" type="number">Total profit</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="topClientes" type="array">
+  Top 10 clients by quotation volume (last 30 days)
+  <Expandable title="properties">
+    <ResponseField name="cliente_nombre" type="string">Client name</ResponseField>
+    <ResponseField name="total" type="integer">Total quotations</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="topClientesGanadas" type="array">
+  Top 10 clients by won quotations (last 30 days)
+  <Expandable title="properties">
+    <ResponseField name="cliente_nombre" type="string">Client name</ResponseField>
+    <ResponseField name="total" type="integer">Won quotations</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="porEstado" type="array">
+  Breakdown by quotation status
+  <Expandable title="properties">
+    <ResponseField name="estado" type="string">Status code</ResponseField>
+    <ResponseField name="total" type="integer">Count</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Filtered Dashboard (`tipo=filtradas`)
+
+Provides filtered quotation list with summary statistics.
+
+<ResponseField name="total" type="integer">
+  Total number of quotations matching filters
+</ResponseField>
+
+<ResponseField name="cerradas" type="integer">
+  Number of closed quotations (status = SI)
+</ResponseField>
+
+<ResponseField name="profit" type="number">
+  Total profit from closed quotations
+</ResponseField>
+
+<ResponseField name="porEstado" type="array">
+  Breakdown by status
+  <Expandable title="properties">
+    <ResponseField name="estado" type="string">Status code</ResponseField>
+    <ResponseField name="total" type="integer">Count</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="cotizaciones" type="array">
+  List of quotations
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">Quote ID</ResponseField>
+    <ResponseField name="cliente_nombre" type="string">Client name</ResponseField>
+    <ResponseField name="estado" type="string">Status</ResponseField>
+    <ResponseField name="profit" type="number">Profit amount</ResponseField>
+    <ResponseField name="fecha" type="string">Quote date</ResponseField>
+    <ResponseField name="vendedor_nombre" type="string">Salesperson name</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Sales Performance (`tipo=por-vendedor`)
+
+Provides sales statistics grouped by salesperson.
+
+<ResponseField name="vendedores" type="array">
+  Overall performance by salesperson
+  <Expandable title="properties">
+    <ResponseField name="vendedor_id" type="integer">User ID</ResponseField>
+    <ResponseField name="vendedor_nombre" type="string">Full name</ResponseField>
+    <ResponseField name="total" type="integer">Total quotations</ResponseField>
+    <ResponseField name="cerradas" type="integer">Closed quotations</ResponseField>
+    <ResponseField name="profit_total" type="number">Total profit</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="vendedoresMes" type="array">
+  Monthly performance by salesperson
+  <Expandable title="properties">
+    <ResponseField name="vendedor_id" type="integer">User ID</ResponseField>
+    <ResponseField name="vendedor_nombre" type="string">Full name</ResponseField>
+    <ResponseField name="mes" type="integer">Month number</ResponseField>
+    <ResponseField name="anio" type="integer">Year</ResponseField>
+    <ResponseField name="total" type="integer">Total quotations</ResponseField>
+    <ResponseField name="cerradas" type="integer">Closed quotations</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Contact Activity (`tipo=contactos`)
+
+Tracks salesperson activity and identifies clients without recent quotations.
+
+<ResponseField name="actividad" type="array">
+  Salesperson activity (last 30 days)
+  <Expandable title="properties">
+    <ResponseField name="vendedor_nombre" type="string">Full name</ResponseField>
+    <ResponseField name="total" type="integer">Total quotations</ResponseField>
+    <ResponseField name="clientes_unicos" type="integer">Unique clients quoted</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="sinCotizar" type="array">
+  Active clients without quotes in last 30 days
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">Client ID</ResponseField>
+    <ResponseField name="nombre" type="string">Client name</ResponseField>
+    <ResponseField name="vendedor_nombre" type="string">Assigned salesperson</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Request Examples
+
+<RequestExample>
+
+```bash General dashboard
+curl -X GET "https://api.iclcotizaciones.com/api/dashboard?tipo=general" \
+  -H "Cookie: session=your_session_token"
+```
+
+```bash Filtered quotations
+curl -X GET "https://api.iclcotizaciones.com/api/dashboard?tipo=filtradas&estado=SI&fecha_desde=2024-01-01" \
+  -H "Cookie: session=your_session_token"
+```
+
+```bash Sales by salesperson
+curl -X GET "https://api.iclcotizaciones.com/api/dashboard?tipo=por-vendedor" \
+  -H "Cookie: session=your_session_token"
+```
+
+```bash Client contact activity
+curl -X GET "https://api.iclcotizaciones.com/api/dashboard?tipo=contactos" \
+  -H "Cookie: session=your_session_token"
+```
+
+</RequestExample>
+
+## Response Examples
+
+<ResponseExample>
+
+```json General Dashboard
+{
+  "porSemana": [
+    {
+      "semana": 9,
+      "anio": 2024,
+      "total": 45,
+      "cerradas": 12,
+      "profit_total": 8750.50
+    }
+  ],
+  "porMes": [
+    {
+      "mes": 3,
+      "anio": 2024,
+      "total": 180,
+      "cerradas": 48,
+      "profit_total": 35200.75
+    }
+  ],
+  "topClientes": [
+    {
+      "cliente_nombre": "Acme Corporation",
+      "total": 28
+    },
+    {
+      "cliente_nombre": "Global Imports SA",
+      "total": 22
+    }
+  ],
+  "topClientesGanadas": [
+    {
+      "cliente_nombre": "Acme Corporation",
+      "total": 8
+    },
+    {
+      "cliente_nombre": "Tech Solutions Ltd",
+      "total": 6
+    }
+  ],
+  "porEstado": [
+    {
+      "estado": "SI",
+      "total": 48
+    },
+    {
+      "estado": "NO",
+      "total": 35
+    },
+    {
+      "estado": "PEND",
+      "total": 42
+    },
+    {
+      "estado": "ENCOTIZACION",
+      "total": 55
+    }
+  ]
+}
+```
+
+```json Filtered Dashboard
+{
+  "total": 48,
+  "cerradas": 48,
+  "profit": 35200.75,
+  "porEstado": [
+    {
+      "estado": "SI",
+      "total": 48
+    }
+  ],
+  "cotizaciones": [
+    {
+      "id": 1234,
+      "cliente_nombre": "Acme Corporation",
+      "estado": "SI",
+      "profit": 850.50,
+      "fecha": "2024-03-01",
+      "vendedor_nombre": "Juan Pérez"
+    }
+  ]
+}
+```
+
+```json Sales Performance
+{
+  "vendedores": [
+    {
+      "vendedor_id": 3,
+      "vendedor_nombre": "Juan Pérez",
+      "total": 120,
+      "cerradas": 35,
+      "profit_total": 28500.00
+    },
+    {
+      "vendedor_id": 5,
+      "vendedor_nombre": "María González",
+      "total": 95,
+      "cerradas": 28,
+      "profit_total": 22100.50
+    }
+  ],
+  "vendedoresMes": [
+    {
+      "vendedor_id": 3,
+      "vendedor_nombre": "Juan Pérez",
+      "mes": 3,
+      "anio": 2024,
+      "total": 45,
+      "cerradas": 12
+    }
+  ]
+}
+```
+
+```json Contact Activity
+{
+  "actividad": [
+    {
+      "vendedor_nombre": "Juan Pérez",
+      "total": 28,
+      "clientes_unicos": 15
+    },
+    {
+      "vendedor_nombre": "María González",
+      "total": 22,
+      "clientes_unicos": 12
+    }
+  ],
+  "sinCotizar": [
+    {
+      "id": 45,
+      "nombre": "Dormant Client SA",
+      "vendedor_nombre": "Juan Pérez"
+    },
+    {
+      "id": 67,
+      "nombre": "Inactive Imports Ltd",
+      "vendedor_nombre": "María González"
+    }
+  ]
+}
+```
+
+```json Invalid Type
+{
+  "error": "Tipo no válido"
+}
+```
+
+```json Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+
+</ResponseExample>

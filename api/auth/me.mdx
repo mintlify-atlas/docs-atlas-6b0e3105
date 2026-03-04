@@ -1,0 +1,73 @@
+---
+title: 'Get Current User'
+api: 'GET /api/auth/me'
+description: 'Retrieve the currently authenticated user'
+---
+
+Returns information about the currently authenticated user based on the session cookie. Use this endpoint to verify authentication status and retrieve user details.
+
+## Request
+
+No request body required. Authentication is determined from the `icl-session` cookie.
+
+## Response
+
+<ResponseField name="user" type="object | null">
+  The current user object, or `null` if not authenticated
+  
+  <ResponseField name="id" type="number">
+    User's unique identifier
+  </ResponseField>
+  
+  <ResponseField name="full_name" type="string">
+    User's full name
+  </ResponseField>
+  
+  <ResponseField name="email" type="string">
+    User's email address
+  </ResponseField>
+  
+  <ResponseField name="rol" type="string">
+    User's role (e.g., "admin", "user", "viewer")
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://api.example.com/api/auth/me \
+  -H "Cookie: icl-session=<session-value>"
+```
+
+```json Response - Authenticated
+{
+  "user": {
+    "id": 1,
+    "full_name": "John Doe",
+    "email": "user@example.com",
+    "rol": "admin"
+  }
+}
+```
+</RequestExample>
+
+## Error Responses
+
+<ResponseExample>
+```json 401 Unauthorized - Not Logged In
+{
+  "user": null
+}
+```
+</ResponseExample>
+
+## Session Validation
+
+The endpoint checks the `isLoggedIn` flag in the session data:
+- If `isLoggedIn` is `true`, returns user details
+- If `isLoggedIn` is `false` or undefined, returns `user: null` with 401 status
+
+## Notes
+
+- Requires a valid `icl-session` cookie
+- Does not validate the user still exists in the database (reads from session only)
+- Use this endpoint to check authentication status on page load

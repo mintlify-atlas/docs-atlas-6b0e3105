@@ -1,0 +1,162 @@
+---
+title: 'Create Commercial Agreement'
+api: 'POST /api/acuerdos'
+---
+
+Creates a new commercial agreement. This endpoint requires admin permissions.
+
+<Note>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can create commercial agreements.
+</Note>
+
+## Request Body
+
+<ParamField body="cliente_id" type="integer" optional>
+  Client ID to associate with this agreement
+</ParamField>
+
+<ParamField body="cliente_final" type="string" optional>
+  End client name
+</ParamField>
+
+<ParamField body="tarifario" type="string" optional>
+  Rate schedule identifier
+</ParamField>
+
+<ParamField body="desconsolidado_wm" type="string" optional>
+  Deconsolidation weight/measurement type
+</ParamField>
+
+<ParamField body="desconsolidado_min" type="number" optional>
+  Minimum deconsolidation rate
+</ParamField>
+
+<ParamField body="desconsolidado_max" type="number" optional>
+  Maximum deconsolidation rate
+</ParamField>
+
+<ParamField body="observ_desco" type="string" optional>
+  Deconsolidation notes
+</ParamField>
+
+<ParamField body="agp_tn" type="number" optional>
+  AGP per ton rate
+</ParamField>
+
+<ParamField body="manejo_documentos" type="number" optional>
+  Document handling fee
+</ParamField>
+
+<ParamField body="log_fee" type="number" optional>
+  Logistics fee
+</ParamField>
+
+<ParamField body="doc_fee" type="number" optional>
+  Documentation fee
+</ParamField>
+
+<ParamField body="certflete" type="number" optional>
+  Freight certificate fee
+</ParamField>
+
+<ParamField body="seguro_porcentaje" type="number" optional>
+  Insurance percentage
+</ParamField>
+
+<ParamField body="seguro_min" type="number" optional>
+  Minimum insurance amount
+</ParamField>
+
+<ParamField body="emision_bl" type="number" optional>
+  Bill of lading emission fee
+</ParamField>
+
+<ParamField body="plazo_pago" type="string" optional>
+  Payment terms
+</ParamField>
+
+<ParamField body="maximo_descontar" type="number" optional>
+  Maximum discount allowed
+</ParamField>
+
+<ParamField body="comision" type="number" optional>
+  Commission rate
+</ParamField>
+
+<ParamField body="incentivo" type="number" optional>
+  Incentive amount
+</ParamField>
+
+<ParamField body="datos_cotizar" type="string" optional>
+  Quote data
+</ParamField>
+
+<ParamField body="observaciones" type="string" optional>
+  General notes
+</ParamField>
+
+<ParamField body="vendedor_id" type="integer" optional>
+  Salesperson user ID
+</ParamField>
+
+<ParamField body="ultima_mod" type="string" optional>
+  Last modification date
+</ParamField>
+
+<ParamField body="tarifario_fiscal" type="string" optional>
+  Fiscal rate schedule
+</ParamField>
+
+<ParamField body="moneda" type="string" optional default="USD">
+  Currency (USD, EUR, or ARS)
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.iclcotizaciones.com/api/acuerdos \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cliente_id": 5,
+    "cliente_final": "End Client SA",
+    "tarifario": "TARIFF-2024-A",
+    "desconsolidado_wm": "W/M",
+    "desconsolidado_min": 50.0,
+    "desconsolidado_max": 150.0,
+    "agp_tn": 25.0,
+    "manejo_documentos": 75.0,
+    "plazo_pago": "30 days",
+    "moneda": "USD"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 201
+{
+  "id": 15,
+  "client_id": 5,
+  "end_client": "End Client SA",
+  "rate_schedule": "TARIFF-2024-A",
+  "deconsolidation_wm": "W/M",
+  "deconsolidation_min": 50.0,
+  "deconsolidation_max": 150.0,
+  "agp_per_ton": 25.0,
+  "document_handling": 75.0,
+  "payment_terms": "30 days",
+  "currency": "USD",
+  "created_at": "2024-03-04T15:30:00Z",
+  "updated_at": "2024-03-04T15:30:00Z"
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,342 @@
+---
+title: Analytics & Dashboards
+description: Track quotation performance, sales metrics, and business insights
+---
+
+## Overview
+
+ICL Cotizaciones provides analytics and reporting capabilities through the quotations list view, with grouping, filtering, and status tracking features. The system calculates key metrics automatically from quotation data.
+
+## Quotations Dashboard
+
+The main quotations page (`/cotizaciones`) serves as the primary dashboard with real-time metrics and interactive filtering.
+
+### Key Metrics Display
+
+<CardGroup cols={3}>
+  <Card title="Total Quotations" icon="hashtag">
+    Count of quotations matching current filters, displayed prominently as:
+    
+    **{count} cotizaciones**
+    
+    Updates instantly as filters change.
+  </Card>
+  
+  <Card title="Week Grouping" icon="calendar">
+    Quotations grouped by week and year in format:
+    
+    **Semana 2026-S09** (12 cotizaciones)
+    
+    Enables trend analysis by time period.
+  </Card>
+  
+  <Card title="Status Distribution" icon="pie-chart">
+    Visual color-coding of quotation status:
+    - Green rows: Ganada (Won)
+    - Red rows: Perdida (Lost)
+    - Amber rows: Pendiente (Pending)
+    - Blue rows: Pend A/C
+    - Pink rows: En cotizacion
+  </Card>
+</CardGroup>
+
+## Filtering & Analysis
+
+### Server-Side Filters
+
+Filters that trigger database queries:
+
+<Steps>
+  <Step title="Date Range">
+    **Desde / Hasta** date inputs filter quotations by `fecha` (quotation date).
+    
+    Use cases:
+    - Weekly performance review
+    - Monthly pipeline analysis
+    - Quarter-end reporting
+  </Step>
+  
+  <Step title="Sales Representative">
+    **Comercial** multi-select (admin only) filters by `vendedor_id`.
+    
+    Non-admin users automatically see only their own quotations.
+  </Step>
+  
+  <Step title="Status Filter">
+    **Estado** multi-select filters by `cerrada` field:
+    - Ganada (Won)
+    - Perdida (Lost)
+    - Pendiente (Pending)
+    - Pend A/C
+    - En cotizacion
+    
+    Analyze conversion rates and pipeline health.
+  </Step>
+  
+  <Step title="Client Filter">
+    **Cliente** multi-select filters by `cliente_id`.
+    
+    Track quotations for specific FFWW clients.
+  </Step>
+  
+  <Step title="Destination Filter">
+    **Via** single-select filters by `via_id` (destination port).
+    
+    Analyze route performance and capacity.
+  </Step>
+</Steps>
+
+### Client-Side Search
+
+The **Buscar** (Search) field performs real-time filtering across:
+
+- Quote number (`nro_cotizacion`)
+- FFWW client name (`cliente_nombre`)
+- End client name (`cliente_final`)
+- Origin (`origen_nombre`)
+- Destination (`via_nombre`)
+- Sales rep (`vendedor_nombre`)
+- Cargo details (`detalle`)
+- Reference (`referencia`)
+- Sales order (`orden_venta`)
+- Observations (`observaciones`)
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:296-312
+
+## Computed Metrics
+
+### Profit Calculation
+
+Automatically calculated on save:
+
+```typescript
+profit = (freight_sale - freight_net) + (origin_costs_sale - origin_costs_net)
+```
+
+Displayed in quotation table for each row, enabling:
+- Margin analysis
+- Profitability trends
+- Pricing strategy validation
+
+Source: src/db/schema.ts:117 (profit field)
+
+### Week & Year Derivation
+
+System automatically calculates from quotation date:
+
+```typescript
+week = getWeekNumber(fecha)
+year = fecha.getFullYear()
+```
+
+Used for:
+- Time-based grouping
+- Weekly performance tracking
+- Year-over-year comparisons
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:314-329
+
+## Table View Organization
+
+### Column Groups
+
+The quotations table organizes data into logical sections:
+
+<Accordion>
+  <AccordionItem title="Datos Comerciales (7 columns)">
+    - Fecha de carga
+    - ID de Cotizacion
+    - Estado (status badge)
+    - Cliente FFWW
+    - Cliente Final
+    - Comercial (admin view)
+    - Referencia
+  </AccordionItem>
+  
+  <AccordionItem title="Datos Operativos (8 columns)">
+    - Impo / Expo
+    - Tipo (Maritime/Air)
+    - FCL / LCL
+    - Cond. Venta
+    - Origen
+    - Via
+    - Moneda
+    - Pick Up address
+  </AccordionItem>
+  
+  <AccordionItem title="Datos de la Carga (5 columns)">
+    - CBM Reales
+    - KGS
+    - Apilable
+    - IMO
+    - Detalle Carga
+  </AccordionItem>
+  
+  <AccordionItem title="Datos Facturables (1 column)">
+    - CBM Facturables
+  </AccordionItem>
+  
+  <AccordionItem title="Estructura de Costos (8 columns)">
+    - Flete Neto
+    - TipoFN
+    - Flete Venta
+    - TipoFV
+    - Costos Netos
+    - Costos Venta
+    - **Profit** (highlighted)
+    - Validez de Tarifa
+  </AccordionItem>
+  
+  <AccordionItem title="Estado y Control (2 columns)">
+    - Fecha de Cierre
+    - Observaciones
+  </AccordionItem>
+</Accordion>
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:463-510
+
+## Week Separator Rows
+
+Quotations group by week with sticky separators:
+
+```
+Semana 2026-S09 (15 cotizaciones)
+  [quotation rows]
+Semana 2026-S08 (22 cotations)
+  [quotation rows]
+```
+
+Separators stick below the header during scroll for context retention.
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:513-519
+
+## Performance Insights
+
+### Conversion Analysis
+
+Filter by date range and analyze status distribution:
+
+1. **Pipeline Health**: Count of "En cotizacion" + "Pendiente"
+2. **Win Rate**: (Ganada / Total closed) × 100
+3. **Loss Rate**: (Perdida / Total closed) × 100
+
+### Sales Rep Performance (Admin)
+
+Filter by **Comercial** to view individual performance:
+- Quotation volume
+- Win/loss ratio
+- Average profit per quote
+- Response time (fecha vs fecha_cierre)
+
+### Route Analysis
+
+Filter by **Via** to analyze:
+- Popular destinations
+- Average margins by route
+- Volume trends (FCL vs LCL)
+- Pricing consistency
+
+### Client Analysis
+
+Filter by **Cliente** to review:
+- Quote frequency
+- Conversion rate
+- Average deal size
+- Profit trends
+
+## Data Export (Future)
+
+Planned features:
+- CSV/Excel export with current filters
+- Custom date range reports
+- Profit margin summaries
+- Sales rep scorecards
+- Client activity reports
+
+## Access Control
+
+<CardGroup cols={2}>
+  <Card title="Admin Dashboard" icon="user-shield">
+    **Full Visibility**
+    - All quotations across all sales reps
+    - Comercial filter available
+    - Complete profit visibility
+    - Cross-team analytics
+    
+    Roles: DIRECTOR, GERENTE, ADMINISTRACION
+  </Card>
+  
+  <Card title="Commercial Dashboard" icon="user">
+    **Personal Scope**
+    - Only quotations where `vendedor_id` matches user
+    - Comercial filter hidden (pre-filtered)
+    - Own performance metrics
+    - Client relationship tracking
+    
+    Roles: COMERCIAL, CSV, OPERACIONES
+  </Card>
+</CardGroup>
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:243-244, 263-277
+
+## Real-Time Updates
+
+The dashboard refreshes automatically when:
+- Filters change (date, status, client, via)
+- Returning from quotation edit
+- New quotation created
+
+No manual refresh needed.
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:280-294
+
+## Mobile Responsiveness
+
+Filters collapse on mobile devices:
+- Tap "Filtros" to expand/collapse
+- Horizontal scroll for table
+- Sticky header and week separators maintain context
+
+Source: src/app/(dashboard)/cotizaciones/page.tsx:370-383
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Weekly Review" icon="calendar-check">
+    Use week grouping to:
+    - Review current week pipeline every Monday
+    - Close out previous week on Friday
+    - Track quotation velocity
+  </Card>
+  
+  <Card title="Status Hygiene" icon="clipboard-check">
+    Maintain clean status progression:
+    - Update "En cotizacion" → "Pendiente" when sent to client
+    - Set "Ganada"/"Perdida" within 48 hours of decision
+    - Use "Pend A/C" for awaiting internal approval
+  </Card>
+  
+  <Card title="Profit Monitoring" icon="trending-up">
+    Track profit column:
+    - Target minimum margins per route
+    - Flag low-profit quotes for review
+    - Analyze profit trends by client
+  </Card>
+  
+  <Card title="Search Efficiency" icon="search">
+    Use search for:
+    - Quick quote number lookup
+    - Client history review
+    - Reference tracking
+    - Cargo description matching
+  </Card>
+</CardGroup>
+
+## Future Analytics Enhancements
+
+- **Dashboard Charts**: Visual graphs for conversion rates, profit trends, volume by route
+- **Predictive Analytics**: Win probability scoring based on historical data
+- **KPI Cards**: Revenue forecasts, monthly targets, year-to-date metrics
+- **Custom Reports**: Scheduled email reports, PDF generation
+- **Benchmark Comparison**: Performance vs. previous periods
+- **Client Segmentation**: RFM analysis (Recency, Frequency, Monetary value)

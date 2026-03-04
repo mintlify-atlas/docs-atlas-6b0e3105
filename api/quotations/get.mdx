@@ -1,0 +1,275 @@
+---
+title: Get Quotation
+api: GET /api/cotizaciones/:id
+---
+
+Retrieves a single quotation by ID with related data (client, origin, via, seller).
+
+## Authorization
+
+Requires active session. Non-admin users can only access quotations they created.
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  Quotation ID
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  Quotation object with joined data
+  
+  <Expandable title="Properties">
+    <ResponseField name="id" type="number">
+      Quotation ID
+    </ResponseField>
+    
+    <ResponseField name="nro_cotizacion" type="string">
+      Quotation number in format `COT-YYMM-NNNN`
+    </ResponseField>
+    
+    <ResponseField name="fecha" type="string" format="YYYY-MM-DD">
+      Quotation date
+    </ResponseField>
+    
+    <ResponseField name="hora" type="string" format="HH:mm">
+      Quotation time
+    </ResponseField>
+    
+    <ResponseField name="impo_expo" type="string">
+      Import/Export. Values: `IMPO`, `EXPO`
+    </ResponseField>
+    
+    <ResponseField name="tipo" type="string">
+      Quotation type (optional)
+    </ResponseField>
+    
+    <ResponseField name="fcl_lcl" type="string">
+      Load type. Values: `FCL`, `LCL`
+    </ResponseField>
+    
+    <ResponseField name="cond_venta" type="string">
+      Sale condition (optional)
+    </ResponseField>
+    
+    <ResponseField name="cliente_id" type="number">
+      Client ID
+    </ResponseField>
+    
+    <ResponseField name="cliente_nombre" type="string">
+      Client legal name (joined from clients table)
+    </ResponseField>
+    
+    <ResponseField name="origen_id" type="number">
+      Origin location ID
+    </ResponseField>
+    
+    <ResponseField name="origen_nombre" type="string">
+      Origin location name (joined from locations table)
+    </ResponseField>
+    
+    <ResponseField name="via_id" type="number">
+      Via/route location ID
+    </ResponseField>
+    
+    <ResponseField name="via_nombre" type="string">
+      Via/route name (joined from locations table)
+    </ResponseField>
+    
+    <ResponseField name="cliente_final" type="string">
+      End client name (optional)
+    </ResponseField>
+    
+    <ResponseField name="kgs" type="number">
+      Weight in kilograms
+    </ResponseField>
+    
+    <ResponseField name="cbm_facturables" type="number">
+      Billable cubic meters
+    </ResponseField>
+    
+    <ResponseField name="cbm_reales" type="number">
+      Actual cubic meters
+    </ResponseField>
+    
+    <ResponseField name="detalle" type="string">
+      Cargo description
+    </ResponseField>
+    
+    <ResponseField name="imo" type="string">
+      IMO classification (for hazardous materials)
+    </ResponseField>
+    
+    <ResponseField name="apilable" type="string">
+      Stackable. Values: `SI`, `NO`
+    </ResponseField>
+    
+    <ResponseField name="pickup_address" type="string">
+      Pickup address (optional)
+    </ResponseField>
+    
+    <ResponseField name="moneda" type="string">
+      Currency. Values: `USD`, `EUR`, `ARS`
+    </ResponseField>
+    
+    <ResponseField name="gastos_origen_neto" type="number">
+      Origin costs (net)
+    </ResponseField>
+    
+    <ResponseField name="gastos_origen_venta" type="number">
+      Origin costs (sale price)
+    </ResponseField>
+    
+    <ResponseField name="flete_neto" type="number">
+      Freight cost (net)
+    </ResponseField>
+    
+    <ResponseField name="flete_venta" type="number">
+      Freight cost (sale price)
+    </ResponseField>
+    
+    <ResponseField name="tipo_fn" type="string">
+      Freight net type (optional)
+    </ResponseField>
+    
+    <ResponseField name="tipo_fv" type="string">
+      Freight sale type (optional)
+    </ResponseField>
+    
+    <ResponseField name="cerrada" type="string">
+      Status. Values: `ENCOTIZACION`, `SI`, `NO`, `PEND`, `PEND A/C`
+    </ResponseField>
+    
+    <ResponseField name="fecha_cierre" type="string" format="YYYY-MM-DD">
+      Close date (only when status is `SI`, `NO`, or `PEND A/C`)
+    </ResponseField>
+    
+    <ResponseField name="observaciones" type="string">
+      Notes (optional)
+    </ResponseField>
+    
+    <ResponseField name="referencia" type="string">
+      Reference (optional)
+    </ResponseField>
+    
+    <ResponseField name="orden_venta" type="string">
+      Sales order reference (optional)
+    </ResponseField>
+    
+    <ResponseField name="profit" type="number">
+      Calculated profit: `(flete_venta - flete_neto) + (gastos_origen_venta - gastos_origen_neto)`
+    </ResponseField>
+    
+    <ResponseField name="validez_tarifa" type="string">
+      Rate validity (optional)
+    </ResponseField>
+    
+    <ResponseField name="semana" type="number">
+      Week number (computed from date)
+    </ResponseField>
+    
+    <ResponseField name="mes" type="number">
+      Month (computed from date)
+    </ResponseField>
+    
+    <ResponseField name="anio" type="number">
+      Year (computed from date)
+    </ResponseField>
+    
+    <ResponseField name="vendedor_id" type="number">
+      Seller/user ID
+    </ResponseField>
+    
+    <ResponseField name="vendedor_nombre" type="string">
+      Seller full name (joined from users table)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET 'https://your-domain.com/api/cotizaciones/15' \
+  -H 'Cookie: session=your-session-token'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": 15,
+  "nro_cotizacion": "COT-2602-0015",
+  "fecha": "2026-02-10",
+  "hora": "14:30",
+  "impo_expo": "IMPO",
+  "tipo": null,
+  "fcl_lcl": "LCL",
+  "cond_venta": null,
+  "cliente_id": 3,
+  "cliente_nombre": "Empresa SA",
+  "origen_id": 2,
+  "origen_nombre": "Shanghai",
+  "via_id": 1,
+  "via_nombre": "Buenos Aires",
+  "cliente_final": null,
+  "kgs": 500,
+  "cbm_facturables": 2.5,
+  "cbm_reales": 2.3,
+  "detalle": "Electronics components",
+  "imo": null,
+  "apilable": "SI",
+  "pickup_address": null,
+  "moneda": "USD",
+  "gastos_origen_neto": 100,
+  "gastos_origen_venta": 150,
+  "flete_neto": 500,
+  "flete_venta": 650,
+  "tipo_fn": null,
+  "tipo_fv": null,
+  "cerrada": "ENCOTIZACION",
+  "fecha_cierre": null,
+  "observaciones": null,
+  "referencia": null,
+  "orden_venta": null,
+  "profit": 200,
+  "validez_tarifa": null,
+  "semana": 7,
+  "mes": 2,
+  "anio": 2026,
+  "vendedor_id": 5,
+  "vendedor_nombre": "María López"
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "No autorizado"
+}
+```
+
+```json 404 Not Found
+{
+  "error": "No encontrada"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+| Status | Condition |
+|--------|----------|
+| 401 | No active session |
+| 403 | Non-admin user attempting to access another user's quotation |
+| 404 | Quotation ID does not exist |
+
+## Notes
+
+- **Role-based access:** Admin users can access any quotation. Non-admin users can only access quotations where `vendedor_id` matches their user ID.
+- The response includes joined data from related tables (clients, locations, users)
+- Field names in the response use Spanish naming convention for frontend compatibility

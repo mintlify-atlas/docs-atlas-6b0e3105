@@ -1,0 +1,68 @@
+---
+title: "Delete Client"
+api: "DELETE /api/clientes/:id"
+description: "Delete a client from the system"
+---
+
+Deletes a client record from the system. This is a physical deletion (hard delete).
+
+## Authentication
+
+<Warning>
+  **Admin only** - This endpoint requires administrator privileges (DIRECTOR or GERENTE role).
+</Warning>
+
+Requires an active session with admin role. Non-admin users will receive a 403 error.
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the client to delete
+</ParamField>
+
+## Dependency Checks
+
+Before deletion, the system verifies whether the client has:
+- Associated quotations (`quotations.client_id`)
+- Associated commercial agreements (`commercial_agreements.client_id`)
+
+If either exists, the deletion is rejected with a 409 Conflict error.
+
+## Response
+
+<ResponseField name="ok" type="boolean">
+  Confirmation that the deletion was successful
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://your-domain.com/api/clientes/15 \
+  -H "Cookie: session=your-session-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "ok": true
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "No autorizado"
+}
+```
+
+```json 409 Conflict
+{
+  "error": "No se puede eliminar: el cliente tiene 3 cotizaciones y 1 acuerdo comercial vinculadas."
+}
+```
+</ResponseExample>
+
+<Note>
+  The error message dynamically adjusts based on the number and type of dependencies found. Examples:
+  - "No se puede eliminar: el cliente tiene 1 cotización vinculada."
+  - "No se puede eliminar: el cliente tiene 5 cotizaciones y 2 acuerdos comerciales vinculadas."
+</Note>

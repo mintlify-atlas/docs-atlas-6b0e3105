@@ -1,0 +1,310 @@
+---
+title: Update Quotation
+api: PUT /api/cotizaciones/:id
+---
+
+Updates an existing quotation. Automatically recalculates profit and date-derived fields.
+
+## Authorization
+
+Requires active session. Non-admin users can only update quotations they created. Admin users can reassign quotations to other sellers.
+
+## Path Parameters
+
+<ParamField path="id" type="number" required>
+  Quotation ID
+</ParamField>
+
+## Request Body
+
+<ParamField body="fecha" type="string" format="YYYY-MM-DD">
+  Quotation date (if changed, week/month/year will be recalculated)
+</ParamField>
+
+<ParamField body="hora" type="string" format="HH:mm">
+  Quotation time
+</ParamField>
+
+<ParamField body="impo_expo" type="string">
+  Import/Export. Values: `IMPO`, `EXPO`
+</ParamField>
+
+<ParamField body="tipo" type="string">
+  Quotation type (optional)
+</ParamField>
+
+<ParamField body="fcl_lcl" type="string">
+  Load type. Values: `FCL`, `LCL`
+</ParamField>
+
+<ParamField body="cond_venta" type="string">
+  Sale condition (optional)
+</ParamField>
+
+<ParamField body="cliente_id" type="number">
+  Client ID (must exist in clients table)
+</ParamField>
+
+<ParamField body="origen_id" type="number">
+  Origin location ID (optional)
+</ParamField>
+
+<ParamField body="via_id" type="number">
+  Via/route location ID (optional)
+</ParamField>
+
+<ParamField body="cliente_final" type="string">
+  End client name (optional)
+</ParamField>
+
+<ParamField body="kgs" type="number">
+  Weight in kilograms
+</ParamField>
+
+<ParamField body="cbm_facturables" type="number">
+  Billable cubic meters
+</ParamField>
+
+<ParamField body="cbm_reales" type="number">
+  Actual cubic meters
+</ParamField>
+
+<ParamField body="detalle" type="string">
+  Cargo description
+</ParamField>
+
+<ParamField body="imo" type="string">
+  IMO classification (for hazardous materials)
+</ParamField>
+
+<ParamField body="apilable" type="string">
+  Stackable. Values: `SI`, `NO`
+</ParamField>
+
+<ParamField body="pickup_address" type="string">
+  Pickup address (optional)
+</ParamField>
+
+<ParamField body="moneda" type="string">
+  Currency. Values: `USD`, `EUR`, `ARS`
+</ParamField>
+
+<ParamField body="gastos_origen_neto" type="number">
+  Origin costs (net) - used to recalculate profit
+</ParamField>
+
+<ParamField body="gastos_origen_venta" type="number">
+  Origin costs (sale price) - used to recalculate profit
+</ParamField>
+
+<ParamField body="flete_neto" type="number">
+  Freight cost (net) - used to recalculate profit
+</ParamField>
+
+<ParamField body="flete_venta" type="number">
+  Freight cost (sale price) - used to recalculate profit
+</ParamField>
+
+<ParamField body="tipo_fn" type="string">
+  Freight net type (optional)
+</ParamField>
+
+<ParamField body="tipo_fv" type="string">
+  Freight sale type (optional)
+</ParamField>
+
+<ParamField body="cerrada" type="string">
+  Status. Values: `ENCOTIZACION`, `SI`, `NO`, `PEND`, `PEND A/C`
+</ParamField>
+
+<ParamField body="fecha_cierre" type="string" format="YYYY-MM-DD">
+  Close date (only saved when status is `SI`, `NO`, or `PEND A/C`)
+</ParamField>
+
+<ParamField body="orden_venta" type="string">
+  Sales order reference (optional)
+</ParamField>
+
+<ParamField body="observaciones" type="string">
+  Notes (optional)
+</ParamField>
+
+<ParamField body="referencia" type="string">
+  Reference (optional)
+</ParamField>
+
+<ParamField body="validez_tarifa" type="string">
+  Rate validity (optional)
+</ParamField>
+
+<ParamField body="vendedor_id" type="number">
+  Seller/user ID
+  
+  **Admin only:** Admins can reassign quotations to other users. Non-admin users cannot change the seller.
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  The updated quotation object with recalculated fields
+  
+  <Expandable title="Properties">
+    <ResponseField name="profit" type="number">
+      Automatically recalculated: `(flete_venta - flete_neto) + (gastos_origen_venta - gastos_origen_neto)`
+      
+      Rounded to 2 decimal places
+    </ResponseField>
+    
+    <ResponseField name="week" type="number">
+      Week number (recalculated if `fecha` changed)
+    </ResponseField>
+    
+    <ResponseField name="month" type="number">
+      Month (recalculated if `fecha` changed)
+    </ResponseField>
+    
+    <ResponseField name="year" type="number">
+      Year (recalculated if `fecha` changed)
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      Updated to current timestamp (ISO 8601)
+    </ResponseField>
+  </Expandable>
+  
+  All updated fields are returned in the response.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT 'https://your-domain.com/api/cotizaciones/15' \
+  -H 'Content-Type: application/json' \
+  -H 'Cookie: session=your-session-token' \
+  -d '{
+    "cerrada": "SI",
+    "fecha_cierre": "2026-02-15",
+    "orden_venta": "OV-2026-0042",
+    "flete_venta": 700,
+    "observaciones": "Cliente confirmó la orden"
+  }'
+```
+
+```bash Update status only
+curl -X PUT 'https://your-domain.com/api/cotizaciones/15' \
+  -H 'Content-Type: application/json' \
+  -H 'Cookie: session=your-session-token' \
+  -d '{
+    "cerrada": "NO",
+    "fecha_cierre": "2026-02-15",
+    "observaciones": "Cliente rechazó por precio"
+  }'
+```
+
+```bash Admin: Reassign to another seller
+curl -X PUT 'https://your-domain.com/api/cotizaciones/15' \
+  -H 'Content-Type: application/json' \
+  -H 'Cookie: session=your-session-token' \
+  -d '{
+    "vendedor_id": 7
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": 15,
+  "quote_number": "COT-2602-0015",
+  "date": "2026-02-10",
+  "time": "14:30",
+  "impo_expo": "IMPO",
+  "tipo": null,
+  "load_type": "LCL",
+  "sale_condition": null,
+  "client_id": 3,
+  "origin_id": 2,
+  "via_id": 1,
+  "end_client": null,
+  "kgs": 500,
+  "billable_cbm": 2.5,
+  "actual_cbm": 2.3,
+  "description": "Electronics components",
+  "imo": null,
+  "stackable": "SI",
+  "pickup_address": null,
+  "currency": "USD",
+  "origin_costs_net": 100,
+  "origin_costs_sale": 150,
+  "freight_net": 500,
+  "freight_sale": 700,
+  "freight_net_type": null,
+  "freight_sale_type": null,
+  "status": "SI",
+  "close_date": "2026-02-15",
+  "sales_order": "OV-2026-0042",
+  "notes": "Cliente confirmó la orden",
+  "reference": null,
+  "rate_validity": null,
+  "profit": 250,
+  "month": 2,
+  "year": 2026,
+  "week": 7,
+  "user_id": 5,
+  "created_at": "2026-02-10T14:30:00.000Z",
+  "updated_at": "2026-02-15T16:45:00.000Z"
+}
+```
+
+```json 401 Unauthorized
+{
+  "error": "No autorizado"
+}
+```
+
+```json 403 Forbidden
+{
+  "error": "No autorizado"
+}
+```
+
+```json 404 Not Found
+{
+  "error": "No encontrada"
+}
+```
+</ResponseExample>
+
+## Error Responses
+
+| Status | Condition |
+|--------|----------|
+| 401 | No active session |
+| 403 | Non-admin user attempting to update another user's quotation |
+| 404 | Quotation ID does not exist |
+
+## Server Logic
+
+### Recalculated Fields
+
+1. **profit**: Automatically recalculated from cost and sale prices:
+   ```
+   profit = (flete_venta - flete_neto) + (gastos_origen_venta - gastos_origen_neto)
+   ```
+   Rounded to 2 decimal places.
+
+2. **week, month, year**: Recalculated if `fecha` is updated
+
+3. **close_date**: Only saved when `cerrada` is `SI`, `NO`, or `PEND A/C`. Set to `null` for other statuses.
+
+4. **updated_at**: Automatically set to current timestamp
+
+5. **user_id**: 
+   - For admin users: Can be changed via `vendedor_id` in request body
+   - For non-admin users: Cannot be changed (preserves existing value)
+
+## Notes
+
+- **Role-based access:** Non-admin users can only update their own quotations
+- Admin users can reassign quotations to other sellers
+- Profit is automatically recalculated on every update
+- The quotation number (`nro_cotizacion`) cannot be changed

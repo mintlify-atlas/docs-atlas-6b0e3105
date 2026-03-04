@@ -1,0 +1,350 @@
+---
+title: Pricing Tables & Rate Management
+description: Manage net freight rates, port base rates, and pricing calculations for FCL and LCL shipments
+---
+
+## Overview
+
+ICL Cotizaciones maintains two pricing tables that drive automated rate suggestions and cost calculations:
+
+1. **Pricing Netos** (Net Pricing): Comprehensive rate table for FCL containers and LCL by destination
+2. **Tarifario Puertos Base** (Base Port Rates): Volume-based LCL rates by port of loading
+
+These tables enable consistent pricing and reduce manual rate lookup during quotation creation.
+
+## Pricing Netos (Net Pricing)
+
+### Overview
+
+The unified `pricing_netos` table stores net freight rates for both FCL containers and LCL shipments, with automatic calculation of derived values.
+
+### Container Types
+
+<CardGroup cols={4}>
+  <Card title="LCL" icon="box">
+    Less than Container Load - charged per cubic meter
+  </Card>
+  
+  <Card title="20'" icon="container">
+    20-foot container
+  </Card>
+  
+  <Card title="40'" icon="container">
+    40-foot container
+  </Card>
+  
+  <Card title="40'HQ" icon="container">
+    40-foot High Cube
+  </Card>
+</CardGroup>
+
+### Creating a Net Rate
+
+<Steps>
+  <Step title="Navigate to Pricing Netos">
+    Go to **Maestros → Pricing Netos** (admin only).
+  </Step>
+  
+  <Step title="Select destination">
+    - **Region**: Select from Via locations (e.g., "Asia", "Europe")
+    - **Country**: Auto-filtered based on selected region
+    - **Port**: Auto-filtered Via locations in selected country
+  </Step>
+  
+  <Step title="Set container type and currency">
+    - **Tipo**: LCL, 20', 40', or 40'HQ
+    - **Moneda**: USD or EUR
+  </Step>
+  
+  <Step title="Enter base rates">
+    - **Flete Neto** (Freight Net): Base freight cost (required)
+    - **First Leg**: Additional first leg charge (optional)
+    - **Rebate**: Discount or surcharge (optional)
+  </Step>
+  
+  <Step title="Set validity period">
+    - **Valido Desde**: Start date (required)
+    - **Valido Hasta**: End date (required)
+  </Step>
+  
+  <Step title="Review calculated values">
+    The system automatically computes:
+    - **Net Container**: `Freight Net + (First Leg × 50)`
+    - **Net M³**: Depends on container type:
+      - LCL: `Net Container / 50`
+      - 20': `Net Container / 50 - 2`
+      - 40': `Net Container / 50 - 4`
+      - 40'HQ: `Net Container / 50 - 4`
+    - **Net Total**: `Net M³ + Rebate`
+    
+    These appear as preview in the form before saving.
+  </Step>
+  
+  <Step title="Save rate">
+    Click **Guardar** to create the pricing record with computed values.
+  </Step>
+</Steps>
+
+Source: src/app/(dashboard)/maestros/pricing-netos/page.tsx:42-55
+
+### Pricing Calculation Logic
+
+```typescript
+// From src/app/(dashboard)/maestros/pricing-netos/page.tsx:43-54
+function computeDerived(
+  freightNet: number,
+  firstLeg: number | null,
+  tipo: string,
+  rebate: number | null
+) {
+  const net_container = freightNet + (firstLeg ?? 0) * 50;
+  
+  let net_m3: number;
+  if (tipo === "20'") net_m3 = net_container / 50 - 2;
+  else if (tipo === "40'") net_m3 = net_container / 50 - 4;
+  else net_m3 = net_container / 50; // LCL or 40'HQ
+  
+  const net_total = net_m3 + (rebate ?? 0);
+  
+  return {
+    net_container: Math.round(net_container * 100) / 100,
+    net_m3: Math.round(net_m3 * 100) / 100,
+    net_total: Math.round(net_total * 100) / 100,
+  };
+}
+```
+
+### Pricing Netos Display
+
+Rates are grouped by **Region** with columns:
+
+- **Region / Country / Port**: Destination location hierarchy
+- **Tipo**: Container type badge
+- **Moneda**: Currency
+- **Flete Neto**: Base freight cost
+- **First Leg**: Additional leg charge
+- **Net Container**: Calculated container cost
+- **Net M³**: Per cubic meter rate
+- **Rebate**: Discount/surcharge
+- **Net Total**: Final calculated rate
+- **Vigencia**: Validity period (Desde → Hasta)
+
+### Actions
+
+- **Export**: Download pricing table as CSV/Excel
+- **Filter**: Search by region, country, port, or type
+- **Edit**: Modify rate (updates computed values automatically)
+- **Delete**: Remove rate (admin only)
+
+## Tarifario Puertos Base (Base Port Rates)
+
+### Overview
+
+Volume-based LCL freight rates by port of loading. These rates **auto-suggest** net freight costs when creating LCL quotations.
+
+### Rate Tier Structure
+
+Each port has four volume tiers:
+
+<CardGroup cols={2}>
+  <Card title="0-3 CBM" icon="1">
+    **rate_0_3_cbm**: For shipments up to 3 cubic meters
+  </Card>
+  
+  <Card title="3-5 CBM" icon="2">
+    **rate_3_5_cbm**: For shipments between 3 and 5 cubic meters
+  </Card>
+  
+  <Card title="5-10 CBM" icon="3">
+    **rate_5_10_cbm**: For shipments between 5 and 10 cubic meters
+  </Card>
+  
+  <Card title="10-15 CBM" icon="4">
+    **rate_10_15_cbm**: For shipments over 10 cubic meters
+  </Card>
+</CardGroup>
+
+### Creating a Port Rate
+
+<Steps>
+  <Step title="Navigate to Base Port Rates">
+    Go to **Maestros → Tarifario Puertos Base** (admin only).
+  </Step>
+  
+  <Step title="Select location">
+    - **Region**: Port region
+    - **Country**: Port country
+    - **Port of Loading**: Specific port name
+  </Step>
+  
+  <Step title="Enter volume-based rates">
+    - **Rate 0-3 CBM**: Rate for smallest volumes
+    - **Rate 3-5 CBM**: Mid-low volume rate
+    - **Rate 5-10 CBM**: Mid-high volume rate
+    - **Rate 10-15 CBM**: Largest volume rate
+  </Step>
+  
+  <Step title="Configure additional fields">
+    - **GRI**: General Rate Increase reference
+    - **Minimum**: Minimum charge
+    - **Via**: Routing via port
+    - **Moneda**: Currency (ARS, USD, EUR)
+    - **Transit Time**: Estimated shipping duration
+  </Step>
+  
+  <Step title="Set validity">
+    - **Valido Desde**: Start date
+    - **Valido Hasta**: End date
+  </Step>
+  
+  <Step title="Save rate">
+    Click **Guardar** to create the port rate record.
+  </Step>
+</Steps>
+
+### Auto-Suggestion in Quotations
+
+When creating an **LCL quotation**, the system:
+
+1. Monitors changes to **Via** (destination) and **CBM Reales** fields
+2. Matches selected Via location name with `port_of_loading` in Port Rates table
+3. Selects rate tier based on CBM Reales:
+   - ≤ 3 CBM → `rate_0_3_cbm`
+   - 3-5 CBM → `rate_3_5_cbm`
+   - 5-10 CBM → `rate_5_10_cbm`
+   - > 10 CBM → `rate_10_15_cbm`
+4. Auto-fills **Flete Neto** field (new quotes) or shows hint (edit mode)
+
+Source: docs/flows/02-crear-cotizacion.md:27-58
+
+<Note>
+Auto-suggestion only applies to **LCL** load type. FCL quotations require manual rate entry or reference to Pricing Netos.
+</Note>
+
+### Display Format
+
+Base port rates appear in a table grouped by region:
+
+- **Region / Country / Port**: Location hierarchy
+- **Rate Tiers**: 0-3, 3-5, 5-10, 10-15 CBM columns
+- **GRI**: Rate increase reference
+- **Min**: Minimum charge
+- **Via**: Routing
+- **Moneda**: Currency
+- **Transit Time**: Shipping duration
+- **Vigencia**: Validity dates
+
+## Data Model Reference
+
+### Pricing Netos Schema
+
+From `pricing_netos` table (src/db/schema.ts:133-150):
+
+```typescript
+pricing_netos {
+  id: integer (PK)
+  region: text (required)
+  country: text (required)
+  port: text (required)
+  tipo: "LCL" | "20'" | "40'" | "40'HQ" (required)
+  currency: "USD" | "EUR" (required, default: "USD")
+  freight_net: real (required) // Input
+  first_leg: real // Input (optional)
+  net_container: real (required) // Computed
+  net_m3: real (required) // Computed
+  rebate: real // Input (optional)
+  net_total: real (required) // Computed
+  valid_from: text (required)
+  valid_until: text (required)
+  created_at: text
+  updated_at: text
+}
+```
+
+### Port Rates Schema
+
+From `port_rates` table (src/db/schema.ts:152-170):
+
+```typescript
+port_rates {
+  id: integer (PK)
+  region: text (required)
+  country: text (required)
+  port_of_loading: text (required)
+  rate_0_3_cbm: real (required)
+  rate_3_5_cbm: real (required)
+  rate_5_10_cbm: real (required)
+  rate_10_15_cbm: real (required)
+  gri: text
+  minimum: real
+  via: text
+  currency: "ARS" | "USD" | "EUR" (required, default: "USD")
+  transit_time: text
+  valid_from: text (required)
+  valid_until: text (required)
+  created_at: text
+  updated_at: text
+}
+```
+
+## API Endpoints
+
+### Pricing Netos
+
+- `GET /api/pricing-netos` - List all net rates
+- `POST /api/pricing-netos` - Create rate (admin only, server computes derived values)
+- `PUT /api/pricing-netos/[id]` - Update rate (admin only)
+- `DELETE /api/pricing-netos/[id]` - Delete rate (admin only)
+
+### Port Rates
+
+- `GET /api/tarifario-puertos-base` - List all port rates
+- `POST /api/tarifario-puertos-base` - Create port rate (admin only)
+- `PUT /api/tarifario-puertos-base/[id]` - Update port rate (admin only)
+- `DELETE /api/tarifario-puertos-base/[id]` - Delete port rate (admin only)
+
+## Access Control
+
+| Operation | Admin | Commercial User |
+|-----------|-------|----------------|
+| View pricing tables | ✓ | ✓ (read-only) |
+| Create rates | ✓ | ✗ (403) |
+| Edit rates | ✓ | ✗ (403) |
+| Delete rates | ✓ | ✗ (403) |
+| Export pricing | ✓ | ✓ |
+| Use auto-suggest | ✓ | ✓ |
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Rate Validity" icon="calendar">
+    - Set clear validity periods for all rates
+    - Update rates before expiration to avoid gaps
+    - Archive expired rates rather than deleting (future feature)
+  </Card>
+  
+  <Card title="Volume Tiers" icon="layer-group">
+    Ensure progressive volume discounts:
+    - `rate_0_3_cbm` ≥ `rate_3_5_cbm` ≥ `rate_5_10_cbm` ≥ `rate_10_15_cbm`
+    
+    Validates pricing incentivizes larger shipments.
+  </Card>
+  
+  <Card title="Currency Management" icon="coins">
+    - Match pricing currency to commercial agreements
+    - Maintain parallel USD and EUR rates for key destinations
+    - Document exchange rate basis in notes
+  </Card>
+  
+  <Card title="Location Consistency" icon="map-pin">
+    Use exact location names from the Locations master table to enable auto-matching with quotation Via field.
+  </Card>
+</CardGroup>
+
+## Bulk Import (Future Enhancement)
+
+Planned features:
+- CSV/Excel upload for bulk rate updates
+- Rate version history and rollback
+- Automated expiration notifications
+- Multi-currency conversion matrix

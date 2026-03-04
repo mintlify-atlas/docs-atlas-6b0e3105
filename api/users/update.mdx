@@ -1,0 +1,95 @@
+---
+title: 'Update User'
+api: 'PUT /api/usuarios/:id'
+---
+
+Updates an existing user account. This endpoint requires admin permissions.
+
+<Note>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can update users.
+</Note>
+
+## Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the user to update
+</ParamField>
+
+## Request Body
+
+All fields are required. To keep existing values, you must include them in the request.
+
+<ParamField body="full_name" type="string" required>
+  User's full name
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  User's email address
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  User role: DIRECTOR, GERENTE, COMERCIAL, CSV, OPERACIONES, or ADMINISTRACION
+</ParamField>
+
+<ParamField body="password" type="string" optional>
+  New password (only include if changing password)
+</ParamField>
+
+<ParamField body="is_active" type="boolean" required>
+  Whether the user account is active
+</ParamField>
+
+<ParamField body="dni" type="string" optional>
+  User's national ID number
+</ParamField>
+
+<RequestExample>
+
+```bash Update role and status
+curl -X PUT https://api.iclcotizaciones.com/api/usuarios/8 \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Carlos Rodríguez",
+    "email": "carlos.rodriguez@icl.com",
+    "role": "GERENTE",
+    "is_active": true,
+    "dni": "11223344"
+  }'
+```
+
+```bash Update password
+curl -X PUT https://api.iclcotizaciones.com/api/usuarios/8 \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Carlos Rodríguez",
+    "email": "carlos.rodriguez@icl.com",
+    "role": "GERENTE",
+    "password": "NewSecurePass456!",
+    "is_active": true,
+    "dni": "11223344"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "id": 8,
+  "full_name": "Carlos Rodríguez",
+  "email": "carlos.rodriguez@icl.com",
+  "role": "GERENTE",
+  "is_active": true
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+</ResponseExample>

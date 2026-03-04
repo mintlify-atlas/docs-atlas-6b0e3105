@@ -1,0 +1,78 @@
+---
+title: 'Create User'
+api: 'POST /api/usuarios'
+---
+
+Creates a new user account. This endpoint requires admin permissions.
+
+<Note>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can create users.
+</Note>
+
+<Info>
+  If no password is provided, the default password **icl2026** will be set. Passwords are automatically hashed using bcrypt.
+</Info>
+
+## Request Body
+
+<ParamField body="full_name" type="string" required>
+  User's full name
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  User's email address (must be unique)
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  User role: DIRECTOR, GERENTE, COMERCIAL, CSV, OPERACIONES, or ADMINISTRACION
+</ParamField>
+
+<ParamField body="password" type="string" optional default="icl2026">
+  User's password (will be hashed)
+</ParamField>
+
+<ParamField body="is_active" type="boolean" optional default={true}>
+  Whether the user account is active
+</ParamField>
+
+<ParamField body="dni" type="string" optional>
+  User's national ID number
+</ParamField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.iclcotizaciones.com/api/usuarios \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "full_name": "Carlos Rodríguez",
+    "email": "carlos.rodriguez@icl.com",
+    "role": "COMERCIAL",
+    "password": "SecurePass123!",
+    "is_active": true,
+    "dni": "11223344"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 201
+{
+  "id": 8,
+  "full_name": "Carlos Rodríguez",
+  "email": "carlos.rodriguez@icl.com",
+  "role": "COMERCIAL",
+  "is_active": true
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+</ResponseExample>

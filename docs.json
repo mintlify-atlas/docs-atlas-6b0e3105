@@ -1,122 +1,149 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "ICL Cotizaciones",
+  "theme": "linden",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#002F51",
+    "light": "#299DF4",
+    "dark": "#2E6B96"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/ffuertes-icl/iclapp"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/ffuertes-icl/iclapp"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "installation"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Architecture",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "architecture/overview",
+              "architecture/database-schema",
+              "architecture/authentication",
+              "architecture/routing"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Core Features",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "features/quotations",
+              "features/clients",
+              "features/commercial-agreements",
+              "features/pricing",
+              "features/dashboards"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "User Guides",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "guides/user-roles",
+              "guides/creating-quotations",
+              "guides/managing-clients",
+              "guides/pricing-configuration",
+              "guides/analytics"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "operations/deployment",
+              "operations/database-management",
+              "operations/troubleshooting"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Authentication",
             "pages": [
-              "api-reference/introduction"
+              "api/auth/login",
+              "api/auth/logout",
+              "api/auth/me"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Quotations",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/quotations/list",
+              "api/quotations/create",
+              "api/quotations/get",
+              "api/quotations/update",
+              "api/quotations/delete",
+              "api/quotations/next-number"
+            ]
+          },
+          {
+            "group": "Clients",
+            "pages": [
+              "api/clients/list",
+              "api/clients/create",
+              "api/clients/get",
+              "api/clients/update",
+              "api/clients/delete"
+            ]
+          },
+          {
+            "group": "Commercial Agreements",
+            "pages": [
+              "api/agreements/list",
+              "api/agreements/create",
+              "api/agreements/get",
+              "api/agreements/update",
+              "api/agreements/delete"
+            ]
+          },
+          {
+            "group": "Locations",
+            "pages": [
+              "api/locations/origins",
+              "api/locations/vias"
+            ]
+          },
+          {
+            "group": "Pricing",
+            "pages": [
+              "api/pricing/netos",
+              "api/pricing/port-base-rates"
+            ]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "api/users/list",
+              "api/users/create",
+              "api/users/get",
+              "api/users/update",
+              "api/users/delete"
+            ]
+          },
+          {
+            "group": "Analytics",
+            "pages": [
+              "api/dashboard/overview"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }
