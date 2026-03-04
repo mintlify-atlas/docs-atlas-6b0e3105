@@ -1,9 +1,9 @@
 ---
 title: 'Origin Locations'
-api: 'GET/POST /api/origenes'
+api: 'GET/POST/PUT/DELETE /api/origenes'
 ---
 
-Manage origin locations for shipments.
+Manage origin locations for shipments. Origins are filtered from the unified `locations` table where `location_type = "origen"`.
 
 ## GET - List Origin Locations
 
@@ -121,6 +121,106 @@ curl -X POST https://api.iclcotizaciones.com/api/origenes \
   "region": "Guangdong",
   "location_type": "origen",
   "is_active": true
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+## PUT - Update Origin Location
+
+Updates an existing origin location by ID. This endpoint requires admin permissions.
+
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can update origin locations.
+</Warning>
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the origin location to update
+</ParamField>
+
+### Request Body
+
+<ParamField body="name" type="string" required>
+  Location name
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Country name
+</ParamField>
+
+<ParamField body="region" type="string" optional>
+  Region or state
+</ParamField>
+
+<ParamField body="is_active" type="boolean" optional>
+  Whether the location is active
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X PUT https://api.iclcotizaciones.com/api/origenes/15 \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Shenzhen Port",
+    "country": "China",
+    "region": "Guangdong",
+    "is_active": true
+  }'
+```
+
+### Response Example
+
+```json 200
+{
+  "id": 15,
+  "name": "Shenzhen Port",
+  "country": "China",
+  "region": "Guangdong",
+  "location_type": "origen",
+  "is_active": true
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+## DELETE - Delete Origin Location
+
+Deletes an origin location by ID. This endpoint requires admin permissions.
+
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can delete origin locations. This is a hard delete and cannot be undone.
+</Warning>
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the origin location to delete
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X DELETE https://api.iclcotizaciones.com/api/origenes/15 \
+  -H "Cookie: session=your_session_token"
+```
+
+### Response Example
+
+```json 200
+{
+  "ok": true
 }
 ```
 

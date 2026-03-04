@@ -1,6 +1,6 @@
 ---
-title: 'Net Pricing'
-api: 'GET/POST /api/pricing-netos'
+title: 'Pricing Netos'
+api: 'GET/POST/PUT/DELETE /api/pricing-netos'
 ---
 
 Manage net pricing rates for different container types and destinations.
@@ -232,6 +232,148 @@ curl -X POST https://api.iclcotizaciones.com/api/pricing-netos \
   "valid_until": "2024-08-31",
   "created_at": "2024-03-04T16:30:00Z",
   "updated_at": "2024-03-04T16:30:00Z"
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+## PUT - Update Pricing Neto
+
+Updates an existing pricing neto record by ID. Automatically recalculates derived fields (`net_container`, `net_m3`, `net_total`). This endpoint requires admin permissions.
+
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can update pricing records.
+</Warning>
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the pricing neto record to update
+</ParamField>
+
+### Request Body
+
+All fields from POST are supported. The `updated_at` timestamp is automatically set to the current time.
+
+<ParamField body="region" type="string" required>
+  Geographic region
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Country name
+</ParamField>
+
+<ParamField body="port" type="string" required>
+  Port name
+</ParamField>
+
+<ParamField body="tipo" type="string" required>
+  Container type: LCL, 20', 40', or 40'HQ
+</ParamField>
+
+<ParamField body="currency" type="string" optional default="USD">
+  Currency (USD or EUR)
+</ParamField>
+
+<ParamField body="freight_net" type="number" required>
+  Base freight net rate
+</ParamField>
+
+<ParamField body="first_leg" type="number" optional>
+  First leg cost
+</ParamField>
+
+<ParamField body="rebate" type="number" optional>
+  Rebate amount
+</ParamField>
+
+<ParamField body="valid_from" type="string" required>
+  Start date of validity (YYYY-MM-DD)
+</ParamField>
+
+<ParamField body="valid_until" type="string" required>
+  End date of validity (YYYY-MM-DD)
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X PUT https://api.iclcotizaciones.com/api/pricing-netos/45 \
+  -H "Cookie: session=your_session_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "region": "Asia",
+    "country": "China",
+    "port": "Ningbo",
+    "tipo": "20'",
+    "currency": "USD",
+    "freight_net": 1300.0,
+    "first_leg": 12.0,
+    "rebate": -6.0,
+    "valid_from": "2024-03-01",
+    "valid_until": "2024-09-30"
+  }'
+```
+
+### Response Example
+
+```json 200
+{
+  "id": 45,
+  "region": "Asia",
+  "country": "China",
+  "port": "Ningbo",
+  "tipo": "20'",
+  "currency": "USD",
+  "freight_net": 1300.0,
+  "first_leg": 12.0,
+  "net_container": 1900.0,
+  "net_m3": 36.0,
+  "rebate": -6.0,
+  "net_total": 30.0,
+  "valid_from": "2024-03-01",
+  "valid_until": "2024-09-30",
+  "created_at": "2024-03-04T16:30:00Z",
+  "updated_at": "2024-03-04T18:45:00Z"
+}
+```
+
+```json 403
+{
+  "error": "No autorizado"
+}
+```
+
+## DELETE - Delete Pricing Neto
+
+Deletes a pricing neto record by ID. This endpoint requires admin permissions.
+
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can delete pricing records. This is a hard delete and cannot be undone.
+</Warning>
+
+### Path Parameters
+
+<ParamField path="id" type="integer" required>
+  The unique identifier of the pricing neto record to delete
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X DELETE https://api.iclcotizaciones.com/api/pricing-netos/45 \
+  -H "Cookie: session=your_session_token"
+```
+
+### Response Example
+
+```json 200
+{
+  "ok": true
 }
 ```
 

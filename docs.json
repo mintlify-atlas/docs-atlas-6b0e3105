@@ -115,6 +115,7 @@
           {
             "group": "Locations",
             "pages": [
+              "api/locations/all",
               "api/locations/origins",
               "api/locations/vias"
             ]

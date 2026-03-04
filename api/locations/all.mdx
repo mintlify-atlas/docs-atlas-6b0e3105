@@ -1,13 +1,17 @@
 ---
-title: 'Via Locations'
-api: 'GET/POST/PUT/DELETE /api/vias'
+title: 'All Locations (Unified)'
+api: 'GET/POST/PUT/DELETE /api/locations'
 ---
 
-Manage via (transit) locations for shipments. Vias are filtered from the unified `locations` table where `location_type = "via"`.
+Manage all locations (both origins and vias) through a unified endpoint. This endpoint operates on the `locations` table without filtering by type.
 
-## GET - List Via Locations
+<Note>
+  For type-specific operations, use the dedicated `/api/origenes` or `/api/vias` endpoints which filter by `location_type`.
+</Note>
 
-Retrieves all via locations.
+## GET - List All Locations
+
+Retrieves all locations regardless of type (both "origen" and "via").
 
 ### Response
 
@@ -24,11 +28,11 @@ Retrieves all via locations.
 </ResponseField>
 
 <ResponseField name="region" type="string">
-  Region or state
+  Region or state (nullable)
 </ResponseField>
 
 <ResponseField name="location_type" type="string">
-  Always "via" for this endpoint
+  Type of location: "origen" or "via"
 </ResponseField>
 
 <ResponseField name="is_active" type="boolean">
@@ -38,7 +42,7 @@ Retrieves all via locations.
 ### Request Example
 
 ```bash cURL
-curl -X GET https://api.iclcotizaciones.com/api/vias \
+curl -X GET https://api.iclcotizaciones.com/api/locations \
   -H "Cookie: session=your_session_token"
 ```
 
@@ -47,18 +51,18 @@ curl -X GET https://api.iclcotizaciones.com/api/vias \
 ```json 200
 [
   {
+    "id": 1,
+    "name": "Shanghai",
+    "country": "China",
+    "region": "Shanghai",
+    "location_type": "origen",
+    "is_active": true
+  },
+  {
     "id": 10,
     "name": "Buenos Aires",
     "country": "Argentina",
     "region": "Buenos Aires",
-    "location_type": "via",
-    "is_active": true
-  },
-  {
-    "id": 11,
-    "name": "Montevideo",
-    "country": "Uruguay",
-    "region": "Montevideo",
     "location_type": "via",
     "is_active": true
   }
@@ -71,13 +75,13 @@ curl -X GET https://api.iclcotizaciones.com/api/vias \
 }
 ```
 
-## POST - Create Via Location
+## POST - Create Location
 
-Creates a new via location. This endpoint requires admin permissions.
+Creates a new location of any type. This endpoint requires admin permissions.
 
-<Note>
-  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE) can create via locations.
-</Note>
+<Warning>
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can create locations.
+</Warning>
 
 ### Request Body
 
@@ -91,6 +95,10 @@ Creates a new via location. This endpoint requires admin permissions.
 
 <ParamField body="region" type="string" optional>
   Region or state
+</ParamField>
+
+<ParamField body="location_type" type="string" required>
+  Type of location. Must be either "origen" or "via"
 </ParamField>
 
 <ParamField body="is_active" type="boolean" optional default={true}>
@@ -100,13 +108,14 @@ Creates a new via location. This endpoint requires admin permissions.
 ### Request Example
 
 ```bash cURL
-curl -X POST https://api.iclcotizaciones.com/api/vias \
+curl -X POST https://api.iclcotizaciones.com/api/locations \
   -H "Cookie: session=your_session_token" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Santos",
-    "country": "Brazil",
-    "region": "São Paulo",
+    "name": "Hamburg",
+    "country": "Germany",
+    "region": "Hamburg",
+    "location_type": "via",
     "is_active": true
   }'
 ```
@@ -115,10 +124,10 @@ curl -X POST https://api.iclcotizaciones.com/api/vias \
 
 ```json 201
 {
-  "id": 25,
-  "name": "Santos",
-  "country": "Brazil",
-  "region": "São Paulo",
+  "id": 30,
+  "name": "Hamburg",
+  "country": "Germany",
+  "region": "Hamburg",
   "location_type": "via",
   "is_active": true
 }
@@ -130,18 +139,18 @@ curl -X POST https://api.iclcotizaciones.com/api/vias \
 }
 ```
 
-## PUT - Update Via Location
+## PUT - Update Location
 
-Updates an existing via location by ID. This endpoint requires admin permissions.
+Updates an existing location by ID. This endpoint requires admin permissions.
 
 <Warning>
-  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can update via locations.
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can update locations.
 </Warning>
 
 ### Path Parameters
 
 <ParamField path="id" type="integer" required>
-  The unique identifier of the via location to update
+  The unique identifier of the location to update
 </ParamField>
 
 ### Request Body
@@ -158,6 +167,10 @@ Updates an existing via location by ID. This endpoint requires admin permissions
   Region or state
 </ParamField>
 
+<ParamField body="location_type" type="string" required>
+  Type of location. Must be either "origen" or "via"
+</ParamField>
+
 <ParamField body="is_active" type="boolean" optional>
   Whether the location is active
 </ParamField>
@@ -165,13 +178,14 @@ Updates an existing via location by ID. This endpoint requires admin permissions
 ### Request Example
 
 ```bash cURL
-curl -X PUT https://api.iclcotizaciones.com/api/vias/25 \
+curl -X PUT https://api.iclcotizaciones.com/api/locations/30 \
   -H "Cookie: session=your_session_token" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Santos Port",
-    "country": "Brazil",
-    "region": "São Paulo",
+    "name": "Hamburg Port",
+    "country": "Germany",
+    "region": "Hamburg",
+    "location_type": "via",
     "is_active": true
   }'
 ```
@@ -180,10 +194,10 @@ curl -X PUT https://api.iclcotizaciones.com/api/vias/25 \
 
 ```json 200
 {
-  "id": 25,
-  "name": "Santos Port",
-  "country": "Brazil",
-  "region": "São Paulo",
+  "id": 30,
+  "name": "Hamburg Port",
+  "country": "Germany",
+  "region": "Hamburg",
   "location_type": "via",
   "is_active": true
 }
@@ -195,24 +209,24 @@ curl -X PUT https://api.iclcotizaciones.com/api/vias/25 \
 }
 ```
 
-## DELETE - Delete Via Location
+## DELETE - Delete Location
 
-Deletes a via location by ID. This endpoint requires admin permissions.
+Deletes a location by ID. This endpoint requires admin permissions.
 
 <Warning>
-  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can delete via locations. This is a hard delete and cannot be undone.
+  **Admin Only**: Only users with admin roles (DIRECTOR, GERENTE, ADMINISTRACION) can delete locations. This is a hard delete and cannot be undone.
 </Warning>
 
 ### Path Parameters
 
 <ParamField path="id" type="integer" required>
-  The unique identifier of the via location to delete
+  The unique identifier of the location to delete
 </ParamField>
 
 ### Request Example
 
 ```bash cURL
-curl -X DELETE https://api.iclcotizaciones.com/api/vias/25 \
+curl -X DELETE https://api.iclcotizaciones.com/api/locations/30 \
   -H "Cookie: session=your_session_token"
 ```
 
